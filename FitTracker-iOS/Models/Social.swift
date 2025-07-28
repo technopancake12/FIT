@@ -12,10 +12,10 @@ struct User: Identifiable, Codable {
 }
 
 struct UserStats: Codable {
-    let workouts: Int
-    let followers: Int
-    let following: Int
-    let totalVolume: Double
+    var workouts: Int
+    var followers: Int
+    var following: Int
+    var totalVolume: Double
 }
 
 struct SocialPost: Identifiable, Codable {
@@ -26,9 +26,9 @@ struct SocialPost: Identifiable, Codable {
     let photos: [String]
     let workoutData: WorkoutData?
     let achievementData: AchievementData?
-    let likes: Int
-    let likedBy: [String]
-    let comments: [Comment]
+    var likes: Int
+    var likedBy: [String]
+    var comments: [Comment]
     let createdAt: Date
     let location: String?
     let tags: [String]
@@ -73,8 +73,8 @@ struct Comment: Identifiable, Codable {
     let userId: String
     let content: String
     let createdAt: Date
-    let likes: Int
-    let likedBy: [String]
+    var likes: Int
+    var likedBy: [String]
     let replies: [Comment]?
 }
 

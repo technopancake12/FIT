@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 class NutritionService: ObservableObject {
+    static let shared = NutritionService()
     @Published var meals: [MealEntry] = []
     @Published var goals: NutritionGoals = .default
     @Published var dailyNutrition: DailyNutrition?
@@ -145,7 +146,7 @@ class NutritionService: ObservableObject {
         
         for i in 0..<7 {
             if let date = calendar.date(byAdding: .day, value: -i, to: today) {
-                let dayNutrition = calculateDayNutrition(for: date)
+                let dayNutrition = getDayNutrition(for: date)
                 if dayNutrition.calories > 0 {
                     totalCalories += dayNutrition.calories
                     totalProtein += dayNutrition.protein
@@ -164,6 +165,10 @@ class NutritionService: ObservableObject {
             avgCarbs: Int(totalCarbs / Double(avgDivisor)),
             avgFat: Int(totalFat / Double(avgDivisor))
         )
+    }
+    
+    func getDayNutrition(for date: Date) -> DailyNutrition {
+        return calculateDayNutrition(for: date)
     }
     
     private func calculateDayNutrition(for date: Date) -> DailyNutrition {

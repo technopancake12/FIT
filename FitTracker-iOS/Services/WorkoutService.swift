@@ -66,6 +66,16 @@ class WorkoutService: ObservableObject {
         return workouts.filter { $0.completed }.sorted { $0.date > $1.date }
     }
     
+    func getAllWorkouts() -> [Workout] {
+        return workouts.sorted { $0.date > $1.date }
+    }
+    
+    func getWorkoutsForDate(_ date: Date) -> [Workout] {
+        return workouts.filter { workout in
+            Calendar.current.isDate(workout.date, inSameDayAs: date)
+        }
+    }
+    
     func getWorkoutStats() -> WorkoutStats {
         let completedWorkouts = getWorkoutHistory()
         let totalWorkouts = completedWorkouts.count
