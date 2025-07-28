@@ -85,16 +85,28 @@ struct OFFIngredient: Codable {
 }
 
 struct OFFSearchResponse: Codable {
-    let count: Int
-    let page: Int
-    let pageCount: Int
-    let pageSize: Int
+    let count: Int?
+    let page: Int?
+    let pageCount: Int?
+    let pageSize: Int?
     let products: [OFFProductDetails]
     
     enum CodingKeys: String, CodingKey {
         case count, page, products
         case pageCount = "page_count"
         case pageSize = "page_size"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        count = try container.decodeIfPresent(Int.self, forKey: .count)
+        page = try container.decodeIfPresent(Int.self, forKey: .page)
+        pageCount = try container.decodeIfPresent(Int.self, forKey: .pageCount)
+        pageSize = try container.decodeIfPresent(Int.self, forKey: .pageSize)
+        
+        // Handle products array, defaulting to empty array if missing
+        products = (try? container.decode([OFFProductDetails].self, forKey: .products)) ?? []
     }
 }
 
@@ -105,6 +117,8 @@ class OpenFoodFactsService: ObservableObject {
     private let baseURL = "https://world.openfoodfacts.org/api/v0"
     private let session = URLSession.shared
     private let userAgent = "FitTracker-iOS/1.0"
+    // Retry and deduplication services would be implemented separately
+    private let maxRetries = 3
     
     @Published var searchResults: [OFFProductDetails] = []
     @Published var isLoading = false
@@ -118,21 +132,56 @@ class OpenFoodFactsService: ObservableObject {
     
     // MARK: - Product Lookup
     func getProduct(barcode: String) async throws -> OFFProduct? {
+        // Check cache first
         if let cachedProduct = productCache[barcode] {
             return cachedProduct
         }
         
-        let url = URL(string: "\(baseURL)/product/\(barcode).json")!
+        // Validate barcode
+        guard !barcode.isEmpty, barcode.allSatisfy({ $0.isNumber }) else {
+            throw OpenFoodFactsError.invalidBarcode
+        }
+        
+        guard let url = URL(string: "\(baseURL)/product/\(barcode).json") else {
+            throw OpenFoodFactsError.invalidURL
+        }
+        
         let request = createRequest(for: url)
         
-        let (data, _) = try await session.data(for: request)
-        let product = try JSONDecoder().decode(OFFProduct.self, from: data)
+        let (data, response) = try await session.data(for: request)
         
-        // Cache the result
-        productCache[barcode] = product
-        await saveCachedData()
+        // Validate HTTP response
+        if let httpResponse = response as? HTTPURLResponse {
+            switch httpResponse.statusCode {
+            case 200:
+                break
+            case 404:
+                return nil // Product not found
+            case 429:
+                throw OpenFoodFactsError.rateLimitExceeded
+            case 500...599:
+                throw OpenFoodFactsError.serverError
+            default:
+                throw OpenFoodFactsError.networkError
+            }
+        }
         
-        return product
+        // Validate response data
+        guard !data.isEmpty else {
+            throw OpenFoodFactsError.emptyResponse
+        }
+        
+        do {
+            let product = try JSONDecoder().decode(OFFProduct.self, from: data)
+            
+            // Cache the result
+            productCache[barcode] = product
+            await saveCachedData()
+            
+            return product
+        } catch {
+            throw OpenFoodFactsError.parsingError
+        }
     }
     
     // MARK: - Product Search
@@ -217,8 +266,8 @@ class OpenFoodFactsService: ObservableObject {
     }
     
     // MARK: - Barcode Scanning
-    func startBarcodeScanning() -> BarcodeScannerView {
-        return BarcodeScannerView { [weak self] barcode in
+    func startBarcodeScanning() -> OFFBarcodeScannerView {
+        return OFFBarcodeScannerView { [weak self] barcode in
             Task {
                 await self?.handleScannedBarcode(barcode)
             }
@@ -306,22 +355,22 @@ extension OFFProductDetails {
 
 
 // MARK: - Barcode Scanner View
-struct BarcodeScannerView: UIViewControllerRepresentable {
+struct OFFBarcodeScannerView: UIViewControllerRepresentable {
     let onBarcodeScanned: (String) -> Void
     
-    func makeUIViewController(context: Context) -> BarcodeScannerViewController {
-        let scanner = BarcodeScannerViewController()
+    func makeUIViewController(context: Context) -> OFFBarcodeScannerViewController {
+        let scanner = OFFBarcodeScannerViewController()
         scanner.delegate = context.coordinator
         return scanner
     }
     
-    func updateUIViewController(_ uiViewController: BarcodeScannerViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: OFFBarcodeScannerViewController, context: Context) {}
     
     func makeCoordinator() -> Coordinator {
         Coordinator(onBarcodeScanned: onBarcodeScanned)
     }
     
-    class Coordinator: NSObject, BarcodeScannerDelegate {
+    class Coordinator: NSObject, OFFBarcodeScannerDelegate {
         let onBarcodeScanned: (String) -> Void
         
         init(onBarcodeScanned: @escaping (String) -> Void) {
@@ -335,12 +384,12 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
 }
 
 // MARK: - Barcode Scanner Implementation
-protocol BarcodeScannerDelegate: AnyObject {
+protocol OFFBarcodeScannerDelegate: AnyObject {
     func barcodeScanned(_ barcode: String)
 }
 
-class BarcodeScannerViewController: UIViewController {
-    weak var delegate: BarcodeScannerDelegate?
+class OFFBarcodeScannerViewController: UIViewController {
+    weak var delegate: OFFBarcodeScannerDelegate?
     
     private var captureSession: AVCaptureSession!
     private var previewLayer: AVCaptureVideoPreviewLayer!
@@ -394,7 +443,7 @@ class BarcodeScannerViewController: UIViewController {
     }
 }
 
-extension BarcodeScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
+extension OFFBarcodeScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         if let metadataObject = metadataObjects.first {
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
@@ -402,6 +451,36 @@ extension BarcodeScannerViewController: AVCaptureMetadataOutputObjectsDelegate {
             
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
             delegate?.barcodeScanned(stringValue)
+        }
+    }
+}
+
+// MARK: - OpenFoodFacts Error Types
+enum OpenFoodFactsError: Error, LocalizedError {
+    case invalidBarcode
+    case invalidURL
+    case rateLimitExceeded
+    case serverError
+    case networkError
+    case emptyResponse
+    case parsingError
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidBarcode:
+            return "Invalid barcode format"
+        case .invalidURL:
+            return "Invalid URL"
+        case .rateLimitExceeded:
+            return "Rate limit exceeded for OpenFoodFacts API"
+        case .serverError:
+            return "OpenFoodFacts server error"
+        case .networkError:
+            return "Network error occurred"
+        case .emptyResponse:
+            return "Empty response from OpenFoodFacts API"
+        case .parsingError:
+            return "Failed to parse OpenFoodFacts response"
         }
     }
 }

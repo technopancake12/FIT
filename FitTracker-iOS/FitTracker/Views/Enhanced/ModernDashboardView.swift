@@ -317,7 +317,7 @@ struct ModernDashboardView: View {
                 
                 Spacer()
                 
-                NavigationLink(destination: EnhancedNutritionSearchView(mealType: "Snack") { _ in }) {
+                NavigationLink(destination: EnhancedNutritionSearchView(mealType: "General", onFoodSelected: { _ in })) {
                     Text("View All")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.blue)

@@ -372,7 +372,7 @@ struct DayMeals: Codable {
 }
 
 struct ShoppingListItem: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let ingredientName: String
     let totalAmount: Double
     let unit: String

@@ -328,22 +328,24 @@ class HealthKitService: ObservableObject {
     // MARK: - Writing Data
     
     func saveWorkout(type: HKWorkoutActivityType, startDate: Date, endDate: Date, totalEnergyBurned: Double?) async {
-        let workout = HKWorkout(
-            activityType: type,
-            start: startDate,
-            end: endDate,
-            duration: endDate.timeIntervalSince(startDate),
-            totalEnergyBurned: totalEnergyBurned != nil ? 
-                HKQuantity(unit: .kilocalorie(), doubleValue: totalEnergyBurned!) : nil,
-            totalDistance: nil,
-            metadata: [HKMetadataKeyWasUserEntered: true]
-        )
+        let workoutBuilder = HKWorkoutBuilder(healthStore: healthStore, configuration: HKWorkoutConfiguration(), device: .local())
         
-        do {
-            try await healthStore.save(workout)
-            print("Workout saved to HealthKit")
-        } catch {
-            print("Failed to save workout: \(error)")
+        workoutBuilder.beginCollection(withStart: startDate) { (success, error) in
+            if success {
+                if let energyBurned = totalEnergyBurned {
+                    let energySample = HKQuantitySample(
+                        type: HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!,
+                        quantity: HKQuantity(unit: .kilocalorie(), doubleValue: energyBurned),
+                        start: startDate,
+                        end: endDate
+                    )
+                    workoutBuilder.add([energySample]) { _, _ in }
+                }
+                
+                workoutBuilder.endCollection(withEnd: endDate) { _, _ in
+                    workoutBuilder.finishWorkout { _, _ in }
+                }
+            }
         }
     }
     

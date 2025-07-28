@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users can read/write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow reading public user profiles for following/discovery
+      allow read: if request.auth != null && resource.data.visibility == 'public';
+    }
+    
+    // Social posts rules
+    match /social_posts/{postId} {
+      // Users can create their own posts
+      allow create: if request.auth != null && 
+                   request.auth.uid == resource.data.userId &&
+                   validatePost(resource.data);
+      
+      // Users can read posts from people they follow or public posts
+      allow read: if request.auth != null && 
+                 (resource.data.visibility == 'public' || 
+                  resource.data.userId == request.auth.uid ||
+                  isFollowing(request.auth.uid, resource.data.userId));
+      
+      // Users can update their own posts
+      allow update: if request.auth != null && 
+                   request.auth.uid == resource.data.userId &&
+                   validatePost(request.data);
+      
+      // Users can delete their own posts
+      allow delete: if request.auth != null && 
+                   request.auth.uid == resource.data.userId;
+    }
+    
+    // Workouts rules
+    match /workouts/{workoutId} {
+      // Users can create/read/update/delete their own workouts
+      allow read, write: if request.auth != null && 
+                        request.auth.uid == resource.data.userId;
+      
+      // Allow reading workouts shared in posts
+      allow read: if request.auth != null && 
+                 exists(/databases/$(database)/documents/social_posts/$(workoutId));
+    }
+    
+    // Meals rules
+    match /meals/{mealId} {
+      // Users can create/read/update/delete their own meals
+      allow read, write: if request.auth != null && 
+                        request.auth.uid == resource.data.userId;
+    }
+    
+    // Follows rules
+    match /follows/{followId} {
+      // Users can create follows where they are the follower
+      allow create: if request.auth != null && 
+                   request.auth.uid == resource.data.followerId &&
+                   validateFollow(resource.data);
+      
+      // Users can read follows that involve them
+      allow read: if request.auth != null && 
+                 (request.auth.uid == resource.data.followerId || 
+                  request.auth.uid == resource.data.followingId);
+      
+      // Users can delete follows where they are the follower
+      allow delete: if request.auth != null && 
+                   request.auth.uid == resource.data.followerId;
+    }
+    
+    // Likes rules
+    match /likes/{likeId} {
+      // Users can create/delete their own likes
+      allow create, delete: if request.auth != null && 
+                           request.auth.uid == resource.data.userId;
+      
+      // Anyone can read likes (for like counts)
+      allow read: if request.auth != null;
+    }
+    
+    // Comments rules
+    match /comments/{commentId} {
+      // Users can create comments
+      allow create: if request.auth != null && 
+                   request.auth.uid == resource.data.userId &&
+                   validateComment(resource.data);
+      
+      // Users can read comments on posts they can see
+      allow read: if request.auth != null;
+      
+      // Users can update/delete their own comments
+      allow update, delete: if request.auth != null && 
+                           request.auth.uid == resource.data.userId;
+    }
+    
+    // Challenges rules
+    match /challenges/{challengeId} {
+      // Anyone can read public challenges
+      allow read: if request.auth != null && resource.data.isPublic == true;
+      
+      // Challenge creators can read/write their challenges
+      allow read, write: if request.auth != null && 
+                        request.auth.uid == resource.data.createdBy;
+      
+      // Participants can read challenges they're part of
+      allow read: if request.auth != null && 
+                 request.auth.uid in resource.data.participants;
+    }
+    
+    // Helper functions
+    function validatePost(postData) {
+      return postData.keys().hasAll(['userId', 'type', 'content', 'createdAt', 'visibility']) &&
+             postData.type in ['workout', 'progress', 'achievement', 'general'] &&
+             postData.visibility in ['public', 'friends', 'private'] &&
+             postData.content is string &&
+             postData.content.size() <= 1000;
+    }
+    
+    function validateFollow(followData) {
+      return followData.keys().hasAll(['followerId', 'followingId', 'createdAt']) &&
+             followData.followerId != followData.followingId;
+    }
+    
+    function validateComment(commentData) {
+      return commentData.keys().hasAll(['userId', 'content', 'createdAt']) &&
+             commentData.content is string &&
+             commentData.content.size() <= 500;
+    }
+    
+    function isFollowing(userId, targetUserId) {
+      return exists(/databases/$(database)/documents/follows/$(userId + '_' + targetUserId));
+    }
+    
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}

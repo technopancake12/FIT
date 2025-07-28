@@ -11,11 +11,9 @@
 		B81234580B1C4F5700000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234570B1C4F5700000002 /* ContentView.swift */; };
 		B812345A0B1C4F5900000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B81234590B1C4F5900000003 /* Assets.xcassets */; };
 		B812345D0B1C4F5900000004 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B812345C0B1C4F5900000004 /* Preview Assets.xcassets */; };
-		B81234B90B1C4FC800000068 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B81234BA0B1C4FC800000069 /* GoogleService-Info.plist */; };
 		B81234640B1C4F9A00000005 /* Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234630B1C4F9A00000005 /* Challenge.swift */; };
 		B81234660B1C4F9A00000006 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234650B1C4F9A00000006 /* Exercise.swift */; };
 		B81234680B1C4F9A00000007 /* Nutrition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234670B1C4F9A00000007 /* Nutrition.swift */; };
-		B812346A0B1C4F9A00000008 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234690B1C4F9A00000008 /* PersistenceController.swift */; };
 		B812346C0B1C4F9A00000009 /* Social.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812346B0B1C4F9A00000009 /* Social.swift */; };
 		B812346E0B1C4FA000000010 /* ExerciseDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812346D0B1C4FA000000010 /* ExerciseDatabase.swift */; };
 		B81234700B1C4FA000000011 /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812346F0B1C4FA000000011 /* HealthKitService.swift */; };
@@ -23,21 +21,17 @@
 		B81234740B1C4FA000000013 /* ProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234730B1C4FA000000013 /* ProgressService.swift */; };
 		B81234760B1C4FA000000014 /* SocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234750B1C4FA000000014 /* SocialService.swift */; };
 		B81234780B1C4FA000000015 /* WorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234770B1C4FA000000015 /* WorkoutService.swift */; };
-		B812347A0B1C4FA700000016 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234790B1C4FA700000016 /* DashboardView.swift */; };
-		B812347C0B1C4FA700000017 /* ExerciseSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812347B0B1C4FA700000017 /* ExerciseSearchView.swift */; };
-		B812347E0B1C4FA700000018 /* FocusModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812347D0B1C4FA700000018 /* FocusModeView.swift */; };
-		B81234800B1C4FA700000019 /* HealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812347F0B1C4FA700000019 /* HealthView.swift */; };
 		B81234820B1C4FA700000020 /* NutritionComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234810B1C4FA700000020 /* NutritionComponents.swift */; };
-		B81234840B1C4FA700000021 /* NutritionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234830B1C4FA700000021 /* NutritionView.swift */; };
 		B81234860B1C4FA700000022 /* ProgressComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234850B1C4FA700000022 /* ProgressComponents.swift */; };
-		B81234880B1C4FA700000023 /* ProgressScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234870B1C4FA700000023 /* ProgressScreenView.swift */; };
 		B812348A0B1C4FA700000024 /* SocialComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234890B1C4FA700000024 /* SocialComponents.swift */; };
-		B812348C0B1C4FA700000025 /* SocialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812348B0B1C4FA700000025 /* SocialView.swift */; };
-		B812348E0B1C4FA700000026 /* WorkoutSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812348D0B1C4FA700000026 /* WorkoutSessionView.swift */; };
-		B81234900B1C4FA700000027 /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812348F0B1C4FA700000027 /* WorkoutView.swift */; };
 		B81234920B1C4FA800000028 /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234910B1C4FA800000028 /* FirebaseManager.swift */; };
 		B81234940B1C4FA800000029 /* WgerAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234930B1C4FA800000029 /* WgerAPIService.swift */; };
 		B81234960B1C4FA800000030 /* OpenFoodFactsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234950B1C4FA800000030 /* OpenFoodFactsService.swift */; };
+		DC63EF88824A48948426F0D0 /* LocalDatabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC63EF88824A48948426F0C8 /* LocalDatabaseService.swift */; };
+		68F4FC21C6E3478689B99790 /* WorkoutPlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F4FC21C6E3478689B99789 /* WorkoutPlannerView.swift */; };
+		99B6629D13694CE6867DC397 /* USFoodSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B6629D13694CE6867DC396 /* USFoodSearchView.swift */; };
+		3A18B0293F85471D906FB690 /* DailyNutritionLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A18B0293F85471D906FB68A /* DailyNutritionLogView.swift */; };
+		601904C8053D4077A42513CF /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 601904C8053D4077A42513CE /* BarcodeScannerView.swift */; };
 		B81234980B1C4FA800000031 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234970B1C4FA800000031 /* LoginView.swift */; };
 		B812349A0B1C4FA800000032 /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81234990B1C4FA800000032 /* SignUpView.swift */; };
 		B812349C0B1C4FA800000033 /* ModernDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812349B0B1C4FA800000033 /* ModernDashboardView.swift */; };
@@ -51,6 +45,7 @@
 		B81234B40B1C4FC800000065 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B81234B30B1C4FC800000064 /* FirebaseAuth */; };
 		B81234B60B1C4FC800000066 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = B81234B50B1C4FC800000065 /* FirebaseFirestore */; };
 		B81234B80B1C4FC800000067 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B81234B70B1C4FC800000066 /* FirebaseStorage */; };
+		B81234B90B1C4FC800000068 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B81234BA0B1C4FC800000069 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -62,7 +57,6 @@
 		B81234630B1C4F9A00000005 /* Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Challenge.swift; sourceTree = "<group>"; };
 		B81234650B1C4F9A00000006 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		B81234670B1C4F9A00000007 /* Nutrition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nutrition.swift; sourceTree = "<group>"; };
-		B81234690B1C4F9A00000008 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		B812346B0B1C4F9A00000009 /* Social.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social.swift; sourceTree = "<group>"; };
 		B812346D0B1C4FA000000010 /* ExerciseDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDatabase.swift; sourceTree = "<group>"; };
 		B812346F0B1C4FA000000011 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
@@ -70,21 +64,17 @@
 		B81234730B1C4FA000000013 /* ProgressService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
 		B81234750B1C4FA000000014 /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialService.swift; sourceTree = "<group>"; };
 		B81234770B1C4FA000000015 /* WorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutService.swift; sourceTree = "<group>"; };
-		B81234790B1C4FA700000016 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
-		B812347B0B1C4FA700000017 /* ExerciseSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSearchView.swift; sourceTree = "<group>"; };
-		B812347D0B1C4FA700000018 /* FocusModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModeView.swift; sourceTree = "<group>"; };
-		B812347F0B1C4FA700000019 /* HealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthView.swift; sourceTree = "<group>"; };
 		B81234810B1C4FA700000020 /* NutritionComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionComponents.swift; sourceTree = "<group>"; };
-		B81234830B1C4FA700000021 /* NutritionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionView.swift; sourceTree = "<group>"; };
 		B81234850B1C4FA700000022 /* ProgressComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressComponents.swift; sourceTree = "<group>"; };
-		B81234870B1C4FA700000023 /* ProgressScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressScreenView.swift; sourceTree = "<group>"; };
 		B81234890B1C4FA700000024 /* SocialComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialComponents.swift; sourceTree = "<group>"; };
-		B812348B0B1C4FA700000025 /* SocialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialView.swift; sourceTree = "<group>"; };
-		B812348D0B1C4FA700000026 /* WorkoutSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionView.swift; sourceTree = "<group>"; };
-		B812348F0B1C4FA700000027 /* WorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutView.swift; sourceTree = "<group>"; };
 		B81234910B1C4FA800000028 /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		B81234930B1C4FA800000029 /* WgerAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WgerAPIService.swift; sourceTree = "<group>"; };
 		B81234950B1C4FA800000030 /* OpenFoodFactsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoodFactsService.swift; sourceTree = "<group>"; };
+		DC63EF88824A48948426F0C8 /* LocalDatabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabaseService.swift; sourceTree = "<group>"; };
+		68F4FC21C6E3478689B99789 /* WorkoutPlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPlannerView.swift; sourceTree = "<group>"; };
+		99B6629D13694CE6867DC396 /* USFoodSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USFoodSearchView.swift; sourceTree = "<group>"; };
+		3A18B0293F85471D906FB68A /* DailyNutritionLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyNutritionLogView.swift; sourceTree = "<group>"; };
+		601904C8053D4077A42513CE /* BarcodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerView.swift; sourceTree = "<group>"; };
 		B81234970B1C4FA800000031 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		B81234990B1C4FA800000032 /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpView.swift; sourceTree = "<group>"; };
 		B812349B0B1C4FA800000033 /* ModernDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernDashboardView.swift; sourceTree = "<group>"; };
@@ -160,7 +150,6 @@
 				B81234630B1C4F9A00000005 /* Challenge.swift */,
 				B81234650B1C4F9A00000006 /* Exercise.swift */,
 				B81234670B1C4F9A00000007 /* Nutrition.swift */,
-				B81234690B1C4F9A00000008 /* PersistenceController.swift */,
 				B812346B0B1C4F9A00000009 /* Social.swift */,
 				B81234A90B1C4FA800000040 /* EnhancedWorkout.swift */,
 			);
@@ -179,6 +168,7 @@
 				B81234910B1C4FA800000028 /* FirebaseManager.swift */,
 				B81234930B1C4FA800000029 /* WgerAPIService.swift */,
 				B81234950B1C4FA800000030 /* OpenFoodFactsService.swift */,
+				DC63EF88824A48948426F0C8 /* LocalDatabaseService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -193,20 +183,13 @@
 		B81234AE0B1C4FB700000048 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B81234790B1C4FA700000016 /* DashboardView.swift */,
-				B812347B0B1C4FA700000017 /* ExerciseSearchView.swift */,
-				B812347D0B1C4FA700000018 /* FocusModeView.swift */,
-				B812347F0B1C4FA700000019 /* HealthView.swift */,
 				B81234810B1C4FA700000020 /* NutritionComponents.swift */,
-				B81234830B1C4FA700000021 /* NutritionView.swift */,
 				B81234850B1C4FA700000022 /* ProgressComponents.swift */,
-				B81234870B1C4FA700000023 /* ProgressScreenView.swift */,
 				B81234890B1C4FA700000024 /* SocialComponents.swift */,
-				B812348B0B1C4FA700000025 /* SocialView.swift */,
-				B812348D0B1C4FA700000026 /* WorkoutSessionView.swift */,
-				B812348F0B1C4FA700000027 /* WorkoutView.swift */,
 				B81234B10B1C4FC000000053 /* Authentication */,
 				B81234B20B1C4FC400000054 /* Enhanced */,
+				B81234B30B1C4FC500000055 /* Workout */,
+				B81234B40B1C4FC600000056 /* Nutrition */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -246,6 +229,24 @@
 				B81234A50B1C4FA800000038 /* FoodDetailSheet.swift */,
 			);
 			path = Enhanced;
+			sourceTree = "<group>";
+		};
+		B81234B30B1C4FC500000055 /* Workout */ = {
+			isa = PBXGroup;
+			children = (
+				68F4FC21C6E3478689B99789 /* WorkoutPlannerView.swift */,
+			);
+			path = Workout;
+			sourceTree = "<group>";
+		};
+		B81234B40B1C4FC600000056 /* Nutrition */ = {
+			isa = PBXGroup;
+			children = (
+				99B6629D13694CE6867DC396 /* USFoodSearchView.swift */,
+				3A18B0293F85471D906FB68A /* DailyNutritionLogView.swift */,
+				601904C8053D4077A42513CE /* BarcodeScannerView.swift */,
+			);
+			path = Nutrition;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -332,7 +333,6 @@
 				B81234640B1C4F9A00000005 /* Challenge.swift in Sources */,
 				B81234660B1C4F9A00000006 /* Exercise.swift in Sources */,
 				B81234680B1C4F9A00000007 /* Nutrition.swift in Sources */,
-				B812346A0B1C4F9A00000008 /* PersistenceController.swift in Sources */,
 				B812346C0B1C4F9A00000009 /* Social.swift in Sources */,
 				B812346E0B1C4FA000000010 /* ExerciseDatabase.swift in Sources */,
 				B81234700B1C4FA000000011 /* HealthKitService.swift in Sources */,
@@ -340,21 +340,17 @@
 				B81234740B1C4FA000000013 /* ProgressService.swift in Sources */,
 				B81234760B1C4FA000000014 /* SocialService.swift in Sources */,
 				B81234780B1C4FA000000015 /* WorkoutService.swift in Sources */,
-				B812347A0B1C4FA700000016 /* DashboardView.swift in Sources */,
-				B812347C0B1C4FA700000017 /* ExerciseSearchView.swift in Sources */,
-				B812347E0B1C4FA700000018 /* FocusModeView.swift in Sources */,
-				B81234800B1C4FA700000019 /* HealthView.swift in Sources */,
 				B81234820B1C4FA700000020 /* NutritionComponents.swift in Sources */,
-				B81234840B1C4FA700000021 /* NutritionView.swift in Sources */,
 				B81234860B1C4FA700000022 /* ProgressComponents.swift in Sources */,
-				B81234880B1C4FA700000023 /* ProgressScreenView.swift in Sources */,
 				B812348A0B1C4FA700000024 /* SocialComponents.swift in Sources */,
-				B812348C0B1C4FA700000025 /* SocialView.swift in Sources */,
-				B812348E0B1C4FA700000026 /* WorkoutSessionView.swift in Sources */,
-				B81234900B1C4FA700000027 /* WorkoutView.swift in Sources */,
 				B81234920B1C4FA800000028 /* FirebaseManager.swift in Sources */,
 				B81234940B1C4FA800000029 /* WgerAPIService.swift in Sources */,
 				B81234960B1C4FA800000030 /* OpenFoodFactsService.swift in Sources */,
+				DC63EF88824A48948426F0D0 /* LocalDatabaseService.swift in Sources */,
+				68F4FC21C6E3478689B99790 /* WorkoutPlannerView.swift in Sources */,
+				99B6629D13694CE6867DC397 /* USFoodSearchView.swift in Sources */,
+				3A18B0293F85471D906FB690 /* DailyNutritionLogView.swift in Sources */,
+				601904C8053D4077A42513CF /* BarcodeScannerView.swift in Sources */,
 				B81234980B1C4FA800000031 /* LoginView.swift in Sources */,
 				B812349A0B1C4FA800000032 /* SignUpView.swift in Sources */,
 				B812349C0B1C4FA800000033 /* ModernDashboardView.swift in Sources */,

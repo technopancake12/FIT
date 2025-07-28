@@ -181,16 +181,7 @@ struct ProgressEntry: Identifiable, Codable {
     let notes: String?
 }
 
-struct BodyMeasurement: Identifiable, Codable {
-    let id: String
-    let date: Date
-    let weight: Double?
-    let bodyFat: Double?
-    let muscleMass: Double?
-    let measurements: [String: Double] // chest, waist, bicep, etc.
-    let photos: [String] // URLs to progress photos
-    let notes: String?
-}
+// BodyMeasurement is defined in Analytics.swift
 
 // MARK: - Enhanced Social Models
 struct EnhancedSocialPost: Identifiable, Codable {
@@ -200,7 +191,7 @@ struct EnhancedSocialPost: Identifiable, Codable {
     let content: String
     let media: [MediaItem]
     let workoutData: WorkoutSummary?
-    let achievementData: Achievement?
+    let achievementData: AchievementData?
     var likes: Int
     var likedBy: [String]
     var comments: [EnhancedComment]
@@ -248,22 +239,7 @@ struct WorkoutSummary: Codable {
     let primaryMuscles: [String]
 }
 
-struct Achievement: Codable {
-    let id: String
-    let type: AchievementType
-    let title: String
-    let description: String
-    let value: String
-    let badgeUrl: String?
-    
-    enum AchievementType: String, CaseIterable, Codable {
-        case personalRecord = "pr"
-        case streak = "streak"
-        case milestone = "milestone"
-        case challenge = "challenge"
-        case consistency = "consistency"
-    }
-}
+// Achievement is defined in Analytics.swift
 
 struct Location: Codable {
     let name: String

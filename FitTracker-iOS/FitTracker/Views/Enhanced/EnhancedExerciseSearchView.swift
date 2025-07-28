@@ -12,145 +12,185 @@ struct EnhancedExerciseSearchView: View {
     
     var body: some View {
         NavigationView {
-            ZStack {
-                // Modern gradient background
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.05, green: 0.05, blue: 0.1),
-                        Color(red: 0.1, green: 0.1, blue: 0.2)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Search header
-                    VStack(spacing: 16) {
-                        // Search bar
-                        HStack {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(.white.opacity(0.6))
-                                
-                                TextField("Search exercises...", text: $searchText)
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 16, weight: .medium))
-                                    .onSubmit {
-                                        performSearch()
-                                    }
-                                
-                                if !searchText.isEmpty {
-                                    Button(action: { searchText = "" }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundColor(.white.opacity(0.6))
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white.opacity(0.1))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                    )
-                            )
-                            
-                            Button(action: { showFilters.toggle() }) {
-                                Image(systemName: "slider.horizontal.3")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(width: 44, height: 44)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color.blue.opacity(showFilters ? 1.0 : 0.3))
-                                    )
-                            }
-                        }
-                        
-                        // Active filters
-                        if hasActiveFilters {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    if let category = selectedCategory {
-                                        FilterChip(
-                                            title: category.name,
-                                            onRemove: { selectedCategory = nil }
-                                        )
-                                    }
-                                    
-                                    ForEach(Array(selectedMuscles), id: \.id) { muscle in
-                                        FilterChip(
-                                            title: muscle.nameEn,
-                                            onRemove: { selectedMuscles.remove(muscle) }
-                                        )
-                                    }
-                                    
-                                    if let equipment = selectedEquipment {
-                                        FilterChip(
-                                            title: equipment.name,
-                                            onRemove: { selectedEquipment = nil }
-                                        )
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 16)
-                    
-                    // Results
-                    if isLoading {
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(1.2)
-                            
-                            Text("Searching exercises...")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                ForEach(exercises, id: \.id) { exercise in
-                                    ExerciseCard(exercise: exercise)
-                                        .padding(.horizontal, 20)
-                                }
-                            }
-                            .padding(.vertical, 16)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Exercise Database")
-            .navigationBarTitleDisplayMode(.large)
-            .preferredColorScheme(.dark)
-            .sheet(isPresented: $showFilters) {
-                ExerciseFiltersView(
-                    selectedCategory: $selectedCategory,
-                    selectedMuscles: $selectedMuscles,
-                    selectedEquipment: $selectedEquipment,
-                    onApply: {
-                        showFilters = false
-                        performSearch()
-                    }
-                )
-            }
+            mainContent
         }
         .task {
             await loadInitialData()
         }
-        .onChange(of: searchText) { _ in
+        .onChange(of: searchText) {
             if searchText.isEmpty {
                 performSearch()
             }
         }
+    }
+    
+    private var mainContent: some View {
+        ZStack {
+            backgroundGradient
+            
+            VStack(spacing: 0) {
+                searchHeader
+                contentArea
+            }
+        }
+        .navigationTitle("Exercise Database")
+        .navigationBarTitleDisplayMode(.large)
+        .preferredColorScheme(.dark)
+        .sheet(isPresented: $showFilters) {
+            filtersSheet
+        }
+    }
+    
+    private var backgroundGradient: some View {
+        LinearGradient(
+            colors: [
+                Color(red: 0.05, green: 0.05, blue: 0.1),
+                Color(red: 0.1, green: 0.1, blue: 0.2)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
+    private var searchHeader: some View {
+        VStack(spacing: 16) {
+            searchBar
+            if hasActiveFilters {
+                activeFilters
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 16)
+    }
+    
+    private var searchBar: some View {
+        HStack {
+            searchField
+            filterButton
+        }
+    }
+    
+    private var searchField: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.white.opacity(0.6))
+            
+            TextField("Search exercises...", text: $searchText)
+                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .medium))
+                .onSubmit {
+                    performSearch()
+                }
+            
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(searchFieldBackground)
+    }
+    
+    private var searchFieldBackground: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color.white.opacity(0.1))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+    }
+    
+    private var filterButton: some View {
+        Button(action: { showFilters.toggle() }) {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 44, height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.blue.opacity(showFilters ? 1.0 : 0.3))
+                )
+        }
+    }
+    
+    private var activeFilters: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                if let category = selectedCategory {
+                    FilterChip(
+                        title: category.safeName,
+                        onRemove: { selectedCategory = nil }
+                    )
+                }
+                
+                ForEach(Array(selectedMuscles), id: \.id) { muscle in
+                    FilterChip(
+                        title: muscle.safeName,
+                        onRemove: { selectedMuscles.remove(muscle) }
+                    )
+                }
+                
+                if let equipment = selectedEquipment {
+                    FilterChip(
+                        title: equipment.safeName,
+                        onRemove: { selectedEquipment = nil }
+                    )
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+    
+    private var contentArea: some View {
+        Group {
+            if isLoading {
+                loadingView
+            } else {
+                exercisesList
+            }
+        }
+    }
+    
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(1.2)
+            
+            Text("Searching exercises...")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var exercisesList: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(exercises, id: \.id) { exercise in
+                    ExerciseCard(exercise: exercise)
+                        .padding(.horizontal, 20)
+                }
+            }
+            .padding(.vertical, 16)
+        }
+    }
+    
+    private var filtersSheet: some View {
+        ExerciseFiltersView(
+            selectedCategory: $selectedCategory,
+            selectedMuscles: $selectedMuscles,
+            selectedEquipment: $selectedEquipment,
+            onApply: {
+                showFilters = false
+                performSearch()
+            }
+        )
     }
     
     private var hasActiveFilters: Bool {
@@ -193,104 +233,147 @@ struct ExerciseCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(exercise.name)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(2)
-                    
-                    Text(exercise.category.name)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.blue)
-                }
-                
-                Spacer()
-                
-                if let firstImage = exerciseImages.first {
-                    AsyncImage(url: URL(string: firstImage.image)) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(0.1))
-                            .overlay(
-                                Image(systemName: "figure.strengthtraining.traditional")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.white.opacity(0.6))
-                            )
-                    }
-                    .frame(width: 60, height: 60)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            
-            // Muscles
-            if !exercise.muscles.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Primary Muscles")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(exercise.muscles, id: \.id) { muscle in
-                                Text(muscle.nameEn)
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(Color.green.opacity(0.3))
-                                    )
-                            }
-                        }
-                        .padding(.horizontal, 1)
-                    }
-                }
-            }
-            
-            // Equipment
-            if !exercise.equipment.isEmpty {
-                HStack {
-                    Image(systemName: "dumbbell")
-                        .font(.system(size: 12))
-                        .foregroundColor(.orange)
-                    
-                    Text(exercise.equipment.map { $0.name }.joined(separator: ", "))
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
-                }
-            }
-            
-            // Description preview
-            if !exercise.description.isEmpty {
-                Text(exercise.description)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.7))
-                    .lineLimit(2)
-            }
+            headerSection
+            musclesSection
+            equipmentSection
         }
         .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
-        )
+        .background(cardBackground)
         .task {
             await loadExerciseImages()
         }
     }
     
+    private var headerSection: some View {
+        HStack {
+            exerciseInfo
+            Spacer()
+            exerciseImage
+        }
+    }
+    
+    private var exerciseInfo: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(exercise.safeName)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.white)
+                .lineLimit(2)
+            
+            Text(exercise.category?.safeName ?? "Unknown Category")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.blue)
+        }
+    }
+    
+    @ViewBuilder
+    private var exerciseImage: some View {
+        if let firstImage = exerciseImages.first {
+            AsyncImage(url: URL(string: firstImage.image)) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                imagePlaceholder
+            }
+            .frame(width: 60, height: 60)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+    
+    private var imagePlaceholder: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color.white.opacity(0.1))
+            .overlay(
+                Image(systemName: "figure.strengthtraining.traditional")
+                    .font(.system(size: 24))
+                    .foregroundColor(.white.opacity(0.6))
+            )
+    }
+    
+    @ViewBuilder
+    private var musclesSection: some View {
+        if !exercise.muscles.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Primary Muscles")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                
+                musclesList
+            }
+        }
+    }
+    
+    private var musclesList: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(exercise.muscles, id: \.id) { muscle in
+                    muscleTag(muscle)
+                }
+            }
+            .padding(.horizontal, 1)
+        }
+    }
+    
+    private func muscleTag(_ muscle: WgerMuscle) -> some View {
+        Text(muscle.safeName)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundColor(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.green.opacity(0.3))
+            )
+    }
+    
+    @ViewBuilder
+    private var equipmentSection: some View {
+        if !exercise.equipment.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Equipment")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                
+                equipmentList
+            }
+        }
+    }
+    
+    private var equipmentList: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(exercise.equipment, id: \.id) { equipment in
+                    equipmentTag(equipment)
+                }
+            }
+            .padding(.horizontal, 1)
+        }
+    }
+    
+    private func equipmentTag(_ equipment: WgerEquipment) -> some View {
+        Text(equipment.safeName)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundColor(.white)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.orange.opacity(0.3))
+            )
+    }
+    
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color.white.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+    }
+    
     private func loadExerciseImages() async {
         do {
-            exerciseImages = try await WgerAPIService.shared.fetchExerciseImages(for: exercise.exerciseBase)
+            exerciseImages = try await WgerAPIService.shared.fetchExerciseImages(for: exercise.exerciseBase ?? 0)
         } catch {
             print("Error loading exercise images: \(error)")
         }

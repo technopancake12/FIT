@@ -1,17 +1,23 @@
 import Foundation
 import SwiftUI
+import FirebaseFirestore
 
 class SocialService: ObservableObject {
+    static let shared = SocialService()
+    
     @Published var posts: [SocialPost] = []
     @Published var users: [User] = []
     @Published var follows: [Follow] = []
     @Published var feed: [FeedItem] = []
     
     private let currentUserId = "user_1"
+    private let db = Firestore.firestore()
     
     init() {
         loadFromStorage()
-        initializeMockData()
+        Task {
+            await loadDataFromFirebase()
+        }
         updateFeed()
     }
     
@@ -47,53 +53,28 @@ class SocialService: ObservableObject {
         }
     }
     
-    // MARK: - Mock Data Initialization
-    private func initializeMockData() {
+    // MARK: - Data Loading from Firebase
+    private func loadDataFromFirebase() async {
+        // Load users from Firebase
+        await loadUsersFromFirebase()
+        
+        // Load posts from Firebase
+        await loadPostsFromFirebase()
+        
+        // Load follows from Firebase  
+        await loadFollowsFromFirebase()
+        
+        // Add sample users if needed
         if users.isEmpty {
             users = [
-                User(
-                    id: "user_1",
-                    username: "you",
-                    displayName: "You",
-                    avatar: nil,
-                    bio: "Fitness enthusiast 💪",
-                    stats: UserStats(workouts: 45, followers: 12, following: 8, totalVolume: 15000),
-                    joinDate: Date(timeIntervalSinceNow: -365*24*60*60),
-                    isVerified: false
-                ),
-                User(
-                    id: "user_2",
-                    username: "mikefitness",
-                    displayName: "Mike Johnson",
-                    avatar: nil,
-                    bio: "Personal trainer | Powerlifter 🏋️‍♂️",
-                    stats: UserStats(workouts: 250, followers: 1200, following: 150, totalVolume: 85000),
-                    joinDate: Date(timeIntervalSinceNow: -200*24*60*60),
-                    isVerified: true
-                ),
-                User(
-                    id: "user_3",
-                    username: "sarahstrong",
-                    displayName: "Sarah Williams",
-                    avatar: nil,
-                    bio: "Crossfit athlete | Nutrition coach 🥗",
-                    stats: UserStats(workouts: 180, followers: 800, following: 95, totalVolume: 62000),
-                    joinDate: Date(timeIntervalSinceNow: -150*24*60*60),
-                    isVerified: true
-                ),
-                User(
-                    id: "user_4",
-                    username: "alexruns",
-                    displayName: "Alex Chen",
-                    avatar: nil,
-                    bio: "Marathon runner | Yoga instructor 🧘‍♀️",
-                    stats: UserStats(workouts: 120, followers: 450, following: 200, totalVolume: 25000),
-                    joinDate: Date(timeIntervalSinceNow: -30*24*60*60),
-                    isVerified: false
-                )
+                User(id: "user_1", username: "johndoe", displayName: "John Doe", email: "john@example.com", avatar: nil, bio: "Fitness enthusiast and personal trainer", stats: UserStats(workouts: 125, followers: 245, following: 89, totalVolume: 12500, totalWorkouts: 125, currentStreak: 7, totalPosts: 34, points: 2400)),
+                User(id: "user_2", username: "fitnessguru", displayName: "Sarah Johnson", email: "sarah@example.com", avatar: nil, bio: "Strength coach • Nutritionist • Mom of 2", stats: UserStats(workouts: 89, followers: 523, following: 142, totalVolume: 8900, totalWorkouts: 89, currentStreak: 14, totalPosts: 67, points: 3200)),
+                User(id: "user_3", username: "mikefits", displayName: "Mike Chen", email: "mike@example.com", avatar: nil, bio: "Powerlifter | Competing since 2019 🏋️‍♂️", stats: UserStats(workouts: 156, followers: 189, following: 67, totalVolume: 18600, totalWorkouts: 156, currentStreak: 21, totalPosts: 89, points: 4100)),
+                User(id: "user_4", username: "yogalife", displayName: "Emma Wilson", email: "emma@example.com", avatar: nil, bio: "Yoga instructor • Mindfulness advocate ✨", stats: UserStats(workouts: 234, followers: 387, following: 203, totalVolume: 2340, totalWorkouts: 234, currentStreak: 42, totalPosts: 123, points: 2800))
             ]
         }
         
+        // Fallback to sample data only if Firebase is empty
         if posts.isEmpty {
             posts = [
                 SocialPost(
@@ -145,8 +126,9 @@ class SocialService: ObservableObject {
                     photos: [],
                     workoutData: nil,
                     achievementData: AchievementData(
-                        type: .streak,
+                        type: "streak",
                         title: "100 Day Streak",
+                        description: "Completed 100 consecutive workout days",
                         value: "100 days"
                     ),
                     likes: 45,
@@ -203,6 +185,120 @@ class SocialService: ObservableObject {
         }
         
         saveToStorage()
+    }
+    
+    private func loadUsersFromFirebase() async {
+        do {
+            let snapshot = try await db.collection("users")
+                .limit(to: 20)
+                .getDocuments()
+            
+            let fetchedUsers = snapshot.documents.compactMap { document -> User? in
+                let data = document.data()
+                return User(
+                    id: document.documentID,
+                    username: data["username"] as? String ?? "",
+                    displayName: data["displayName"] as? String ?? "",
+                    email: data["email"] as? String,
+                    avatar: data["avatar"] as? String,
+                    bio: data["bio"] as? String,
+                    stats: UserStats(
+                        workouts: data["workouts"] as? Int ?? 0,
+                        followers: data["followers"] as? Int ?? 0,
+                        following: data["following"] as? Int ?? 0,
+                        totalVolume: data["totalVolume"] as? Double ?? 0
+                    ),
+                    joinDate: (data["joinDate"] as? Timestamp)?.dateValue() ?? Date(),
+                    createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+                    isVerified: data["isVerified"] as? Bool ?? false
+                )
+            }
+            
+            await MainActor.run {
+                self.users = fetchedUsers
+            }
+        } catch {
+            print("Error loading users: \(error)")
+        }
+    }
+    
+    private func loadPostsFromFirebase() async {
+        do {
+            let snapshot = try await db.collection("social_posts")
+                .order(by: "createdAt", descending: true)
+                .limit(to: 50)
+                .getDocuments()
+            
+            let fetchedPosts = snapshot.documents.compactMap { document -> SocialPost? in
+                let data = document.data()
+                
+                var workoutData: WorkoutData?
+                if let workoutDict = data["workoutData"] as? [String: Any] {
+                    workoutData = WorkoutData(
+                        exerciseName: workoutDict["exerciseName"] as? String ?? "",
+                        weight: workoutDict["weight"] as? Double ?? 0,
+                        reps: workoutDict["reps"] as? Int ?? 0,
+                        sets: workoutDict["sets"] as? Int ?? 0,
+                        duration: workoutDict["duration"] as? TimeInterval
+                    )
+                }
+                
+                var achievementData: AchievementData?
+                if let achievementDict = data["achievementData"] as? [String: Any] {
+                    achievementData = AchievementData(
+                        type: achievementDict["type"] as? String ?? "",
+                        title: achievementDict["title"] as? String ?? "",
+                        description: achievementDict["description"] as? String ?? "",
+                        value: achievementDict["value"] as? String ?? ""
+                    )
+                }
+                
+                return SocialPost(
+                    id: document.documentID,
+                    userId: data["userId"] as? String ?? "",
+                    type: PostType(rawValue: data["type"] as? String ?? "general") ?? .general,
+                    content: data["content"] as? String ?? "",
+                    photos: data["photos"] as? [String] ?? [],
+                    workoutData: workoutData,
+                    achievementData: achievementData,
+                    likes: data["likes"] as? Int ?? 0,
+                    likedBy: data["likedBy"] as? [String] ?? [],
+                    comments: [], // Comments loaded separately
+                    createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+                    location: data["location"] as? String,
+                    tags: data["tags"] as? [String] ?? [],
+                    visibility: PostVisibility(rawValue: data["visibility"] as? String ?? "public") ?? .public
+                )
+            }
+            
+            await MainActor.run {
+                self.posts = fetchedPosts
+            }
+        } catch {
+            print("Error loading posts: \(error)")
+        }
+    }
+    
+    private func loadFollowsFromFirebase() async {
+        do {
+            let snapshot = try await db.collection("follows")
+                .getDocuments()
+            
+            let fetchedFollows = snapshot.documents.compactMap { document -> Follow? in
+                let data = document.data()
+                return Follow(
+                    followerId: data["followerId"] as? String ?? "",
+                    followingId: data["followingId"] as? String ?? "",
+                    createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+                )
+            }
+            
+            await MainActor.run {
+                self.follows = fetchedFollows
+            }
+        } catch {
+            print("Error loading follows: \(error)")
+        }
     }
     
     // MARK: - Post Management
@@ -428,5 +524,13 @@ class SocialService: ObservableObject {
         } else {
             return "\(hours)h"
         }
+    }
+    
+    // MARK: - Async Methods for UI
+    func fetchFeed() async throws -> [SocialPost] {
+        await MainActor.run {
+            updateFeed()
+        }
+        return posts
     }
 }

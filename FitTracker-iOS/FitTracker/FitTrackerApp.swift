@@ -1,10 +1,8 @@
 import SwiftUI
-import CoreData
 import Firebase
 
 @main
 struct FitTrackerApp: App {
-    let persistenceController = PersistenceController.shared
     @StateObject private var firebaseManager = FirebaseManager.shared
     
     init() {
@@ -16,7 +14,6 @@ struct FitTrackerApp: App {
             Group {
                 if firebaseManager.isAuthenticated {
                     ContentView()
-                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 } else {
                     LoginView()
                 }

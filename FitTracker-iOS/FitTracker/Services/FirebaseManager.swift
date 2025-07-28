@@ -8,7 +8,7 @@ class FirebaseManager: ObservableObject {
     static let shared = FirebaseManager()
     
     @Published var isAuthenticated = false
-    @Published var currentUser: FitTracker.User?
+    @Published var currentUser: User?
     
     let auth = Auth.auth()
     let firestore = Firestore.firestore()
@@ -61,8 +61,8 @@ class FirebaseManager: ObservableObject {
             "email": user.email ?? "",
             "displayName": displayName,
             "username": displayName.lowercased().replacingOccurrences(of: " ", with: "_"),
-            "bio": nil as String?,
-            "avatar": nil as String?,
+            "bio": NSNull(),
+            "avatar": NSNull(),
             "createdAt": Timestamp(),
             "isVerified": false,
             "stats": [
@@ -79,32 +79,49 @@ class FirebaseManager: ObservableObject {
     private func loadUserProfile(from firebaseUser: FirebaseAuth.User) async {
         do {
             let document = try await firestore.collection("users").document(firebaseUser.uid).getDocument()
+
+            // Safely cast the document data to a [String: Any] dictionary
+            guard let data = document.data() else {
+                print("No user data found")
+                return
+            }
+
+            // Extract stats data safely
+            let statsDict = data["stats"] as? [String: Any] ?? [:]
+            let userStats = UserStats(
+                workouts: statsDict["workouts"] as? Int ?? 0,
+                followers: statsDict["followers"] as? Int ?? 0,
+                following: statsDict["following"] as? Int ?? 0,
+                totalVolume: statsDict["totalVolume"] as? Double ?? 0.0,
+                totalWorkouts: statsDict["totalWorkouts"] as? Int ?? 0,
+                currentStreak: statsDict["currentStreak"] as? Int ?? 0,
+                totalPosts: statsDict["totalPosts"] as? Int ?? 0,
+                points: statsDict["points"] as? Int ?? 0
+            )
             
-            if let data = document.data() {
-                let user = FitTracker.User(
-                    id: data["uid"] as? String ?? firebaseUser.uid,
-                    username: data["username"] as? String ?? "",
-                    displayName: data["displayName"] as? String ?? firebaseUser.displayName ?? "",
-                    avatar: data["avatar"] as? String,
-                    bio: data["bio"] as? String,
-                    stats: UserStats(
-                        workouts: (data["stats"] as? [String: Any])?["workouts"] as? Int ?? 0,
-                        followers: (data["stats"] as? [String: Any])?["followers"] as? Int ?? 0,
-                        following: (data["stats"] as? [String: Any])?["following"] as? Int ?? 0,
-                        totalVolume: (data["stats"] as? [String: Any])?["totalVolume"] as? Double ?? 0.0
-                    ),
-                    joinDate: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
-                    isVerified: data["isVerified"] as? Bool
-                )
-                
-                DispatchQueue.main.async {
-                    self.currentUser = user
-                }
+            // Create user with explicit parameters
+            let user = User(
+                id: data["uid"] as? String ?? firebaseUser.uid,
+                username: data["username"] as? String ?? "",
+                displayName: data["displayName"] as? String ?? firebaseUser.displayName ?? "",
+                email: firebaseUser.email,
+                avatar: data["avatar"] as? String,
+                bio: data["bio"] as? String,
+                stats: userStats,
+                joinDate: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+                createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+                isVerified: data["isVerified"] as? Bool
+            )
+
+
+            DispatchQueue.main.async { [weak self] in
+                self?.currentUser = user
             }
         } catch {
             print("Failed to load user profile: \(error)")
         }
     }
+
     
     func updateUserProfile(displayName: String?, photoURL: URL?) async throws {
         guard let user = auth.currentUser else { throw AuthError.noUser }

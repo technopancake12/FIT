@@ -166,7 +166,7 @@ struct EnhancedNutritionSearchView: View {
             }
         }
         .task {
-            await loadPopularProducts()
+            loadPopularProducts()
         }
     }
     
@@ -426,8 +426,7 @@ struct BarcodeScannerSheet: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .productScanned)) { notification in
-            if let product = notification.object as? OFFProduct,
-               let code = product.product?.productName {
+            if let product = notification.object as? OFFProduct {
                 onBarcodeScanned(product.code)
                 dismiss()
             }

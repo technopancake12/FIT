@@ -383,7 +383,7 @@ struct FoodSearchView: View {
         .onAppear {
             performSearch()
         }
-        .onChange(of: searchText) { _ in
+        .onChange(of: searchText) {
             performSearch()
         }
     }

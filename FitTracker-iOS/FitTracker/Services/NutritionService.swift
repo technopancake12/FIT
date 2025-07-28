@@ -145,7 +145,7 @@ class NutritionService: ObservableObject {
     func getWeeklyAverages() -> WeeklyNutritionAverages {
         let calendar = Calendar.current
         let today = Date()
-        let weekAgo = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+        let _ = calendar.date(byAdding: .day, value: -7, to: today) ?? today
         
         var totalCalories: Double = 0
         var totalProtein: Double = 0

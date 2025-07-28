@@ -4,18 +4,31 @@ import CoreData
 // MARK: - WGER API Models
 struct WgerExercise: Codable {
     let id: Int
-    let uuid: String
-    let name: String
-    let exerciseBase: Int
-    let description: String
-    let creationDate: String
-    let category: WgerCategory
+    let uuid: String?
+    let name: String?
+    let exerciseBase: Int?
+    let description: String?
+    let creationDate: String?
+    let category: WgerCategory?
     let muscles: [WgerMuscle]
     let musclesSecondary: [WgerMuscle]
     let equipment: [WgerEquipment]
-    let license: Int
-    let licenseAuthor: String
-    let language: Int
+    let license: Int?
+    let licenseAuthor: String?
+    let language: Int?
+    
+    // Computed properties for safe access
+    var safeName: String {
+        return name ?? "Unknown Exercise"
+    }
+    
+    var safeDescription: String {
+        return description ?? "No description available"
+    }
+    
+    var safeCategory: String {
+        return category?.name ?? "General"
+    }
     
     enum CodingKeys: String, CodingKey {
         case id, uuid, name, description, category, muscles, equipment, license, language
@@ -24,23 +37,69 @@ struct WgerExercise: Codable {
         case musclesSecondary = "muscles_secondary"
         case licenseAuthor = "license_author"
     }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(Int.self, forKey: .id)
+        uuid = try container.decodeIfPresent(String.self, forKey: .uuid)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        exerciseBase = try container.decodeIfPresent(Int.self, forKey: .exerciseBase)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        creationDate = try container.decodeIfPresent(String.self, forKey: .creationDate)
+        category = try container.decodeIfPresent(WgerCategory.self, forKey: .category)
+        license = try container.decodeIfPresent(Int.self, forKey: .license)
+        licenseAuthor = try container.decodeIfPresent(String.self, forKey: .licenseAuthor)
+        language = try container.decodeIfPresent(Int.self, forKey: .language)
+        
+        // Handle arrays with fallback to empty arrays
+        muscles = (try? container.decode([WgerMuscle].self, forKey: .muscles)) ?? []
+        musclesSecondary = (try? container.decode([WgerMuscle].self, forKey: .musclesSecondary)) ?? []
+        equipment = (try? container.decode([WgerEquipment].self, forKey: .equipment)) ?? []
+    }
 }
 
 struct WgerCategory: Codable {
     let id: Int
-    let name: String
+    let name: String?
+    
+    var safeName: String {
+        return name ?? "Unknown Category"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name
+    }
 }
 
 struct WgerMuscle: Codable, Hashable {
     let id: Int
-    let name: String
-    let nameEn: String
-    let isFront: Bool
+    let name: String?
+    let nameEn: String?
+    let isFront: Bool?
+    
+    var safeName: String {
+        return nameEn ?? name ?? "Unknown Muscle"
+    }
     
     enum CodingKeys: String, CodingKey {
         case id, name
         case nameEn = "name_en"
         case isFront = "is_front"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        nameEn = try container.decodeIfPresent(String.self, forKey: .nameEn)
+        isFront = try container.decodeIfPresent(Bool.self, forKey: .isFront)
     }
     
     func hash(into hasher: inout Hasher) {
@@ -54,7 +113,21 @@ struct WgerMuscle: Codable, Hashable {
 
 struct WgerEquipment: Codable {
     let id: Int
-    let name: String
+    let name: String?
+    
+    var safeName: String {
+        return name ?? "Unknown Equipment"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name
+    }
 }
 
 struct WgerExerciseImage: Codable {
@@ -308,13 +381,13 @@ extension WgerExercise {
     func toLocalExercise() -> Exercise {
         return Exercise(
             id: String(self.id),
-            name: self.name,
-            category: self.category.name,
-            primaryMuscles: self.muscles.map { $0.nameEn },
-            secondaryMuscles: self.musclesSecondary.map { $0.nameEn },
+            name: self.name ?? "Unknown Exercise",
+            category: self.category?.name ?? "General",
+            primaryMuscles: self.muscles.compactMap { $0.nameEn },
+            secondaryMuscles: self.musclesSecondary.compactMap { $0.nameEn },
             equipment: self.equipment.first?.name ?? "None",
             difficulty: .intermediate, // Default, as WGER doesn't provide difficulty
-            instructions: [self.description],
+            instructions: [self.description ?? "No instructions available"],
             tips: [],
             alternatives: []
         )

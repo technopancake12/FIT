@@ -235,7 +235,7 @@ struct EnhancedNutritionView: View {
             }
             
             HStack(spacing: 12) {
-                ForEach(0..<8, id: \.self) { index in
+                ForEach(Array(0..<8), id: \.self) { index in
                     Button(action: { addWater(250) }) {
                         Image(systemName: "drop.fill")
                             .font(.system(size: 16))
