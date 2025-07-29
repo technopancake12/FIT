@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct USFoodSearchView: View {
-    @StateObject private var localDatabase = LocalDatabaseService.shared
+    @StateObject private var offService = OpenFoodFactsService.shared
     @State private var searchText = ""
-    @State private var foods: [DatabaseFood] = []
+    @State private var foods: [Food] = []
     @State private var isLoading = false
     @State private var selectedMealType = "Breakfast"
     @State private var showFoodDetail = false
-    @State private var selectedFood: DatabaseFood?
+    @State private var selectedFood: Food?
     
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
     
@@ -239,7 +239,8 @@ struct USFoodSearchView: View {
         Task {
             do {
                 isLoading = true
-                foods = try await localDatabase.searchFoods(query: searchText, limit: 50)
+                let searchResults = try await offService.searchProducts(query: searchText, pageSize: 50)
+            foods = searchResults.products.map { $0.toFood() }
                 isLoading = false
             } catch {
                 print("Error searching foods: \(error)")
@@ -251,7 +252,8 @@ struct USFoodSearchView: View {
     private func loadPopularFoods() async {
         // Load some popular US foods as initial display
         do {
-            foods = try await localDatabase.searchFoods(query: "", limit: 20)
+            let searchResults = try await offService.searchProducts(query: "", pageSize: 20)
+            foods = searchResults.products.map { $0.toFood() }
         } catch {
             print("Error loading popular foods: \(error)")
         }
@@ -259,7 +261,7 @@ struct USFoodSearchView: View {
 }
 
 struct USFoodCard: View {
-    let food: DatabaseFood
+    let food: Food
     let mealType: String
     let onTap: () -> Void
     
@@ -392,7 +394,7 @@ struct SearchSuggestionChip: View {
 }
 
 struct FoodDetailView: View {
-    let food: DatabaseFood
+    let food: Food
     let mealType: String
     @Environment(\.dismiss) private var dismiss
     @State private var quantity: Double = 100

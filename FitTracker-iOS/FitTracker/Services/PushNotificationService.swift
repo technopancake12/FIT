@@ -1,7 +1,7 @@
 import Foundation
 import UserNotifications
 import Firebase
-import FirebaseMessaging
+// import FirebaseMessaging // Temporarily disabled - FirebaseMessaging not in project dependencies
 
 class PushNotificationService: NSObject, ObservableObject {
     static let shared = PushNotificationService()
@@ -11,12 +11,12 @@ class PushNotificationService: NSObject, ObservableObject {
     
     private override init() {
         super.init()
-        setupMessaging()
+        setupNotifications()
     }
     
     // MARK: - Setup
-    private func setupMessaging() {
-        Messaging.messaging().delegate = self
+    private func setupNotifications() {
+        // Messaging.messaging().delegate = self // Temporarily disabled
         UNUserNotificationCenter.current().delegate = self
         
         // Configure notification categories
@@ -52,6 +52,9 @@ class PushNotificationService: NSObject, ObservableObject {
     
     // MARK: - Token Management
     func updateFCMToken() async {
+        // Temporarily disabled - FirebaseMessaging not available
+        print("FCM token update disabled - FirebaseMessaging not in project dependencies")
+        /*
         do {
             let token = try await Messaging.messaging().token()
             await MainActor.run {
@@ -65,6 +68,7 @@ class PushNotificationService: NSObject, ObservableObject {
         } catch {
             print("Error fetching FCM token: \(error)")
         }
+        */
     }
     
     private func saveFCMToken(_ token: String, for userId: String) async throws {
@@ -302,6 +306,8 @@ class PushNotificationService: NSObject, ObservableObject {
 }
 
 // MARK: - Messaging Delegate
+// Temporarily disabled - FirebaseMessaging not in project dependencies
+/*
 extension PushNotificationService: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         guard let token = fcmToken else { return }
@@ -318,6 +324,7 @@ extension PushNotificationService: MessagingDelegate {
         }
     }
 }
+*/
 
 // MARK: - Notification Center Delegate
 extension PushNotificationService: UNUserNotificationCenterDelegate {

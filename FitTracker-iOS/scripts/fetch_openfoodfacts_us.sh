@@ -1,53 +1,46 @@
 #!/usr/bin/env bash
+# Download and filter Open Food Facts to get up to 50,000 US-origin food items
 
-# Download and filter Open Food Facts data for US products only
-# This script downloads the full dump and filters for US-origin foods
+set -e
 
-set -e  # Exit on any error
-
-# Configuration
 DATA_URL="https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz"
-OUTPUT_FILE="us_products.jsonl"
-FILTERED_FILE="us_products_filtered.jsonl"
-FINAL_FILE="us_products_final.json"
+COMPRESSED="openfoodfacts-products.jsonl.gz"
+EXTRACTED="openfoodfacts-products.jsonl"
+FINAL_JSON="us_products_final.json"
+MAX_PRODUCTS=50000
 
-echo "🚀 Starting Open Food Facts US data fetch..."
+echo "🚀 Starting Open Food Facts fetch..."
 
-# Check if jq is installed
-if ! command -v jq &> /dev/null; then
-    echo "❌ jq is required but not installed. Please install jq first."
-    echo "   macOS: brew install jq"
-    echo "   Ubuntu: sudo apt-get install jq"
-    exit 1
-fi
+# Check required tools
+for cmd in jq wget gunzip grep; do
+    if ! command -v $cmd &> /dev/null; then
+        echo "❌ Missing required tool: $cmd"
+        exit 1
+    fi
+done
 
-# Download the full dump if it doesn't exist
-if [ ! -f "openfoodfacts-products.jsonl.gz" ]; then
-    echo "📥 Downloading Open Food Facts full dump..."
-    echo "   This is a large file (~2GB compressed, ~8GB uncompressed)"
-    echo "   Download may take several minutes depending on your connection..."
-    
+# Download if needed
+if [ ! -f "$COMPRESSED" ]; then
+    echo "📥 Downloading large dataset (~2GB)..."
     wget --progress=bar:force "$DATA_URL"
-    echo "✅ Download completed"
-else
-    echo "📁 Found existing download: openfoodfacts-products.jsonl.gz"
 fi
 
 # Extract if needed
-if [ ! -f "openfoodfacts-products.jsonl" ]; then
-    echo "📦 Extracting compressed file..."
-    gunzip -k openfoodfacts-products.jsonl.gz
-    echo "✅ Extraction completed"
-else
-    echo "📁 Found existing extracted file: openfoodfacts-products.jsonl"
+if [ ! -f "$EXTRACTED" ]; then
+    echo "📦 Extracting JSONL..."
+    gunzip -k "$COMPRESSED"
 fi
 
-echo "🔍 Filtering for US products..."
+echo "🔍 Filtering for US products (up to $MAX_PRODUCTS entries)..."
 
-# Filter for US products and extract relevant fields
-echo "   Processing products (this may take 10-30 minutes)..."
-grep '"countries_tags":[^]]*"us"' openfoodfacts-products.jsonl | \
-    jq -c '{
+> "$FINAL_JSON"
+echo "[" >> "$FINAL_JSON"
+
+COUNT=0
+while IFS= read -r line && [ $COUNT -lt $MAX_PRODUCTS ]; do
+    echo "$line" | grep '"countries_tags":[^]]*"us"' &> /dev/null || continue
+
+    echo "$line" | jq -c '{
         code,
         product_name,
         generic_name,
@@ -78,44 +71,16 @@ grep '"countries_tags":[^]]*"us"' openfoodfacts-products.jsonl | \
         ecoscore_grade,
         last_modified_t,
         created_t
-    }' > "$FILTERED_FILE"
+    }' | sed 's/$/,/' >> "$FINAL_JSON"
 
-# Count total US products
-total_products=$(wc -l < "$FILTERED_FILE")
-echo "✅ Found $total_products US products"
+    COUNT=$((COUNT + 1))
+    if (( COUNT % 5000 == 0 )); then
+        echo "  ✅ Processed $COUNT..."
+    fi
+done < "$EXTRACTED"
 
-# Convert to JSON array format for easier processing
-echo "📝 Converting to JSON array format..."
-echo '[' > "$FINAL_FILE"
-cat "$FILTERED_FILE" | paste -sd ',' - >> "$FINAL_FILE"
-echo ']' >> "$FINAL_FILE"
+# Remove last comma and close array
+sed -i '' -e '$ s/,$//' "$FINAL_JSON"
+echo "]" >> "$FINAL_JSON"
 
-# Clean up intermediate files
-rm "$FILTERED_FILE"
-
-# Display statistics
-echo ""
-echo "📊 Data Statistics:"
-echo "   Total US products: $total_products"
-echo "   File size: $(du -h "$FINAL_FILE" | cut -f1)"
-
-# Show sample data
-echo ""
-echo "📋 Sample product data:"
-jq '.[0:3] | .[] | {code, product_name, brands, energy_kcal_100g: .nutriments.energy_kcal_100g}' "$FINAL_FILE"
-
-echo ""
-echo "🎯 Next steps:"
-echo "1. Import to SQLite: sqlite3 foods.db '.read import_openfoodfacts.sql'"
-echo "2. Import to DuckDB: duckdb foods.duckdb 'CREATE TABLE us_foods AS SELECT * FROM read_json_auto(\"$FINAL_FILE\");'"
-echo "3. Use in Swift app with SQLite.swift or GRDB"
-
-# Optional: Clean up large files
-echo ""
-read -p "🗑️  Remove large intermediate files? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🧹 Cleaning up large files..."
-    rm -f openfoodfacts-products.jsonl.gz openfoodfacts-products.jsonl
-    echo "✅ Cleanup completed"
-fi 
+echo "✅ Fetched $COUNT US food items"

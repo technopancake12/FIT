@@ -31,11 +31,45 @@ struct OFFProductDetails: Codable, Identifiable {
     let novaGroup: Int?
     let servingSize: String?
     let packagingTags: [String]?
+    let countriesTags: [String]?
     
     // Identifiable conformance
     var id: String {
         // Use a combination of productName and brands as a unique identifier
         return "\(productName ?? "unknown")_\(brands ?? "nobrand")_\(UUID().uuidString)"
+    }
+    
+    // Custom initializer to support memberwise initialization
+    init(
+        productName: String? = nil,
+        genericName: String? = nil,
+        brands: String? = nil,
+        categories: String? = nil,
+        imageUrl: String? = nil,
+        imageFrontUrl: String? = nil,
+        imageNutritionUrl: String? = nil,
+        nutriments: OFFNutriments? = nil,
+        ingredients: [OFFIngredient]? = nil,
+        nutriscoreGrade: String? = nil,
+        novaGroup: Int? = nil,
+        servingSize: String? = nil,
+        packagingTags: [String]? = nil,
+        countriesTags: [String]? = nil
+    ) {
+        self.productName = productName
+        self.genericName = genericName
+        self.brands = brands
+        self.categories = categories
+        self.imageUrl = imageUrl
+        self.imageFrontUrl = imageFrontUrl
+        self.imageNutritionUrl = imageNutritionUrl
+        self.nutriments = nutriments
+        self.ingredients = ingredients
+        self.nutriscoreGrade = nutriscoreGrade
+        self.novaGroup = novaGroup
+        self.servingSize = servingSize
+        self.packagingTags = packagingTags
+        self.countriesTags = countriesTags
     }
     
     enum CodingKeys: String, CodingKey {
@@ -50,6 +84,38 @@ struct OFFProductDetails: Codable, Identifiable {
         case novaGroup = "nova_group"
         case servingSize = "serving_size"
         case packagingTags = "packaging_tags"
+        case countriesTags = "countries_tags"
+    }
+    
+    func toFood() -> Food {
+        let name = productName ?? genericName ?? "Unknown Product"
+        let brand = brands
+        let calories = nutriments?.energyKcal100g ?? 0
+        let protein = nutriments?.proteins100g ?? 0
+        let carbs = nutriments?.carbohydrates100g ?? 0
+        let fat = nutriments?.fat100g ?? 0
+        let fiber = nutriments?.fiber100g
+        let sugar = nutriments?.sugars100g
+        let sodium = nutriments?.sodium100g
+        
+        return Food(
+            id: id,
+            name: name,
+            brand: brand,
+            barcode: nil, // Will be set when scanning
+            calories: calories,
+            protein: protein,
+            carbs: carbs,
+            fat: fat,
+            fiber: fiber,
+            sugar: sugar,
+            sodium: sodium,
+            category: categories ?? "General",
+            servingSize: 100, // Default to 100g
+            servingUnit: "g",
+            isVerified: true,
+            imageUrl: imageFrontUrl
+        )
     }
 }
 
@@ -184,6 +250,71 @@ class OpenFoodFactsService: ObservableObject {
         }
     }
     
+    // MARK: - US Product Lookup
+    func getUSProduct(barcode: String) async throws -> OFFProduct? {
+        // Check cache first
+        if let cachedProduct = productCache[barcode] {
+            return cachedProduct
+        }
+        
+        // Validate barcode
+        guard !barcode.isEmpty, barcode.allSatisfy({ $0.isNumber }) else {
+            throw OpenFoodFactsError.invalidBarcode
+        }
+        
+        var components = URLComponents(string: "\(baseURL)/product/\(barcode).json")!
+        components.queryItems = [
+            URLQueryItem(name: "fields", value: "code,product_name,brands,categories,image_front_url,nutriments,nutriscore_grade,nova_group,serving_size,ingredients_text,countries_tags"),
+            URLQueryItem(name: "json", value: "1")
+        ]
+        
+        guard let url = components.url else {
+            throw OpenFoodFactsError.invalidURL
+        }
+        
+        let request = createRequest(for: url)
+        let (data, response) = try await session.data(for: request)
+        
+        // Validate HTTP response
+        if let httpResponse = response as? HTTPURLResponse {
+            switch httpResponse.statusCode {
+            case 200:
+                break
+            case 404:
+                return nil // Product not found
+            case 429:
+                throw OpenFoodFactsError.rateLimitExceeded
+            case 500...599:
+                throw OpenFoodFactsError.serverError
+            default:
+                throw OpenFoodFactsError.networkError
+            }
+        }
+        
+        // Validate response data
+        guard !data.isEmpty else {
+            throw OpenFoodFactsError.emptyResponse
+        }
+        
+        do {
+            let product = try JSONDecoder().decode(OFFProduct.self, from: data)
+            
+            // Check if product is available in US
+            if let countriesTags = product.product?.countriesTags,
+               countriesTags.contains("en:united-states") {
+                // Cache the result
+                productCache[barcode] = product
+                await saveCachedData()
+                return product
+            } else {
+                // Product exists but not available in US
+                return nil
+            }
+        } catch {
+            throw OpenFoodFactsError.parsingError
+        }
+    }
+    
     // MARK: - Product Search
     func searchProducts(query: String, page: Int = 1, pageSize: Int = 20) async throws -> OFFSearchResponse {
         let cacheKey = "\(query)_\(page)_\(pageSize)"
@@ -197,6 +328,8 @@ class OpenFoodFactsService: ObservableObject {
             URLQueryItem(name: "page", value: String(page)),
             URLQueryItem(name: "page_size", value: String(pageSize)),
             URLQueryItem(name: "sort_by", value: "popularity"),
+            URLQueryItem(name: "countries", value: "United States"), // Filter for US products
+            URLQueryItem(name: "fields", value: "code,product_name,brands,categories,image_front_url,nutriments,nutriscore_grade,nova_group,serving_size,ingredients_text"),
             URLQueryItem(name: "json", value: "1")
         ]
         

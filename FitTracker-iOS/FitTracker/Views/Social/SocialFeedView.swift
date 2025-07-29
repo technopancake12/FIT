@@ -79,7 +79,7 @@ struct SocialFeedView: View {
     
     private func setupFeedListener() {
         isLoading = true
-        firebaseManager.listenToFeedPosts { newPosts in
+        FirestoreService.shared.listenToFeedPosts { newPosts in
             self.posts = newPosts
             self.isLoading = false
         }
@@ -89,7 +89,7 @@ struct SocialFeedView: View {
         refreshing = true
         Task {
             do {
-                let newPosts = try await firebaseManager.getFeedPosts(limit: 20)
+                let newPosts = try await FirestoreService.shared.getFeedPosts(limit: 20)
                 await MainActor.run {
                     self.posts = newPosts
                     self.refreshing = false
@@ -107,7 +107,7 @@ struct SocialFeedView: View {
         // Implementation for pagination
         Task {
             do {
-                let morePosts = try await firebaseManager.getFeedPosts(limit: 10)
+                let morePosts = try await FirestoreService.shared.getFeedPosts(limit: 10)
                 await MainActor.run {
                     // Add posts that aren't already in the feed
                     let existingIds = Set(posts.map { $0.id })
@@ -186,7 +186,7 @@ struct SocialPostView: View {
     private func loadUserProfile() {
         Task {
             do {
-                let user = try await firebaseManager.getUserProfile(userId: post.userId)
+                let user = try await FirestoreService.shared.getUserProfile(userId: post.userId)
                 await MainActor.run {
                     self.userProfile = user
                 }
@@ -197,12 +197,12 @@ struct SocialPostView: View {
     }
     
     private func checkIfLiked() {
-        guard let currentUserId = firebaseManager.currentUser?.id else { return }
+        guard let currentUserId = FirebaseManager.shared.currentUser?.id else { return }
         isLiked = post.likedBy.contains(currentUserId)
     }
     
     private func toggleLike() {
-        guard let currentUserId = firebaseManager.currentUser?.id else { return }
+        guard let currentUserId = FirebaseManager.shared.currentUser?.id else { return }
         
         let wasLiked = isLiked
         isLiked.toggle()
@@ -210,9 +210,9 @@ struct SocialPostView: View {
         Task {
             do {
                 if wasLiked {
-                    try await firebaseManager.unlikePost(postId: post.id)
+                    try await FirestoreService.shared.unlikePost(postId: post.id)
                 } else {
-                    try await firebaseManager.likePost(postId: post.id)
+                    try await FirestoreService.shared.likePost(postId: post.id)
                 }
             } catch {
                 await MainActor.run {

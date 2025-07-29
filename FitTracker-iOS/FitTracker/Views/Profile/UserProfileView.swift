@@ -12,7 +12,7 @@ struct UserProfileView: View {
     @State private var followingCount = 0
     
     var currentUser: User? {
-        firebaseManager.currentUser
+        FirebaseManager.shared.currentUser
     }
     
     var body: some View {
@@ -73,11 +73,11 @@ struct UserProfileView: View {
         
         do {
             // Load user posts
-            let posts = try await firebaseManager.getFeedPosts(limit: 50)
+            let posts = try await FirestoreService.shared.getFeedPosts(limit: 50)
             userPosts = posts.filter { $0.userId == currentUser.id }
             
             // Load user workouts
-            userWorkouts = try await firebaseManager.getUserWorkouts(userId: currentUser.id, limit: 20)
+            userWorkouts = try await FirestoreService.shared.getUserWorkouts(userId: currentUser.id, limit: 20)
             
             // Update stats
             followerCount = currentUser.stats.followers

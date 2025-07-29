@@ -6,7 +6,7 @@ struct WorkoutTemplatesView: View {
     @State private var showingCreateTemplate = false
     @State private var showingSearchFilters = false
     @State private var searchText = ""
-    @State private var searchFilters = TemplateSearchFilters.empty()
+    @State private var searchFilters = TemplateSearchFilters.empty
     @State private var searchResults: [WorkoutTemplate] = []
     @State private var isSearching = false
     

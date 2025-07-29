@@ -131,6 +131,68 @@ struct WorkoutTemplate: Identifiable, Codable {
             "videoUrl": videoUrl as Any
         ]
     }
+    
+    // MARK: - Computed Properties
+    var totalExercises: Int {
+        return exercises.count
+    }
+    
+    var totalSets: Int {
+        return exercises.reduce(0) { $0 + $1.targetSets }
+    }
+    
+    var usageCount: Int {
+        return totalUses
+    }
+    
+    var formattedDuration: String {
+        let minutes = Int(estimatedDuration) / 60
+        let hours = minutes / 60
+        let remainingMinutes = minutes % 60
+        
+        if hours > 0 {
+            return "\(hours)h \(remainingMinutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+}
+
+// MARK: - Workout Goal
+struct WorkoutGoal: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let name: String
+    let description: String
+    let type: GoalType
+    let targetValue: Double
+    let currentValue: Double
+    let unit: String
+    let deadline: Date?
+    let isCompleted: Bool
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum GoalType: String, CaseIterable, Codable {
+        case workoutCount = "workout_count"
+        case totalVolume = "total_volume"
+        case weeklyWorkouts = "weekly_workouts"
+        case strengthGain = "strength_gain"
+        case weightLoss = "weight_loss"
+        case muscleGain = "muscle_gain"
+        case endurance = "endurance"
+        case flexibility = "flexibility"
+    }
+    
+    var progressPercentage: Double {
+        guard targetValue > 0 else { return 0 }
+        return min(currentValue / targetValue, 1.0)
+    }
+    
+    var isOverdue: Bool {
+        guard let deadline = deadline else { return false }
+        return Date() > deadline && !isCompleted
+    }
 }
 
 struct TemplateExercise: Identifiable, Codable {
@@ -469,5 +531,132 @@ struct TemplateRating: Identifiable, Codable {
             "review": review as Any,
             "createdAt": Timestamp(date: createdAt)
         ]
+    }
+}
+
+// MARK: - Workout Category
+enum WorkoutCategory: String, CaseIterable, Codable {
+    case strength = "strength"
+    case hypertrophy = "hypertrophy"
+    case endurance = "endurance"
+    case powerlifting = "powerlifting"
+    case bodybuilding = "bodybuilding"
+    case crossfit = "crossfit"
+    case cardio = "cardio"
+    case flexibility = "flexibility"
+    case functional = "functional"
+    case sports = "sports"
+    case rehabilitation = "rehabilitation"
+    case general = "general"
+    
+    var displayName: String {
+        switch self {
+        case .strength: return "Strength"
+        case .hypertrophy: return "Hypertrophy"
+        case .endurance: return "Endurance"
+        case .powerlifting: return "Powerlifting"
+        case .bodybuilding: return "Bodybuilding"
+        case .crossfit: return "CrossFit"
+        case .cardio: return "Cardio"
+        case .flexibility: return "Flexibility"
+        case .functional: return "Functional"
+        case .sports: return "Sports"
+        case .rehabilitation: return "Rehabilitation"
+        case .general: return "General"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .strength: return "dumbbell.fill"
+        case .hypertrophy: return "figure.strengthtraining.traditional"
+        case .endurance: return "heart.fill"
+        case .powerlifting: return "scalemass.fill"
+        case .bodybuilding: return "figure.strengthtraining.traditional"
+        case .crossfit: return "flame.fill"
+        case .cardio: return "figure.run"
+        case .flexibility: return "figure.flexibility"
+        case .functional: return "figure.mixed.cardio"
+        case .sports: return "sportscourt.fill"
+        case .rehabilitation: return "cross.case.fill"
+        case .general: return "figure.walk"
+        }
+    }
+}
+
+// MARK: - Template Search Filters
+struct TemplateSearchFilters: Codable {
+    var searchText: String = ""
+    var difficulty: DifficultyLevel?
+    var muscleGroups: [MuscleGroup] = []
+    var equipment: [Equipment] = []
+    var duration: TimeInterval?
+    var isVerified: Bool?
+    var isPremium: Bool?
+    var minRating: Double?
+    var sortBy: SortOption = .relevance
+    
+    static var empty: TemplateSearchFilters {
+        return TemplateSearchFilters()
+    }
+    
+    enum SortOption: String, CaseIterable, Codable {
+        case relevance = "relevance"
+        case newest = "newest"
+        case oldest = "oldest"
+        case rating = "rating"
+        case popularity = "popularity"
+        case difficulty = "difficulty"
+        
+        var displayName: String {
+            switch self {
+            case .relevance: return "Relevance"
+            case .newest: return "Newest"
+            case .oldest: return "Oldest"
+            case .rating: return "Rating"
+            case .popularity: return "Popularity"
+            case .difficulty: return "Difficulty"
+            }
+        }
+    }
+}
+
+// MARK: - Template Set
+struct TemplateSet: Identifiable, Codable {
+    let id: String
+    let exerciseId: String
+    let setNumber: Int
+    let targetReps: String
+    let targetWeight: String?
+    let restTime: TimeInterval
+    let notes: String?
+    
+    init(id: String = UUID().uuidString, exerciseId: String, setNumber: Int, targetReps: String, targetWeight: String? = nil, restTime: TimeInterval = 120, notes: String? = nil) {
+        self.id = id
+        self.exerciseId = exerciseId
+        self.setNumber = setNumber
+        self.targetReps = targetReps
+        self.targetWeight = targetWeight
+        self.restTime = restTime
+        self.notes = notes
+    }
+}
+
+// MARK: - Rating
+struct Rating: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let username: String
+    let rating: Int // 1-5 stars
+    let review: String?
+    let createdAt: Date
+    
+    init(id: String = UUID().uuidString, userId: String, username: String, rating: Int, review: String? = nil) {
+        self.id = id
+        self.userId = userId
+        self.username = username
+        self.rating = max(1, min(5, rating)) // Ensure rating is between 1-5
+        self.review = review
+        self.createdAt = Date()
     }
 }

@@ -1,18 +1,18 @@
 import SwiftUI
 
 struct ExerciseFiltersView: View {
-    @StateObject private var wgerService = WgerAPIService.shared
+    @StateObject private var openWorkoutService = OpenWorkoutService.shared
     @Environment(\.dismiss) private var dismiss
     
-    @Binding var selectedCategory: WgerCategory?
-    @Binding var selectedMuscles: Set<WgerMuscle>
-    @Binding var selectedEquipment: WgerEquipment?
+    @Binding var selectedCategory: ExerciseCategory?
+@Binding var selectedMuscles: Set<Muscle>
+@Binding var selectedEquipment: OpenWorkoutEquipment?
     
     let onApply: () -> Void
     
-    @State private var categories: [WgerCategory] = []
-    @State private var muscles: [WgerMuscle] = []
-    @State private var equipment: [WgerEquipment] = []
+    @State private var categories: [ExerciseCategory] = []
+    @State private var muscles: [Muscle] = []
+    @State private var equipment: [OpenWorkoutEquipment] = []
     @State private var isLoading = true
     
     var body: some View {
@@ -76,7 +76,7 @@ struct ExerciseFiltersView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 ForEach(categories, id: \.id) { category in
                     FilterButton(
-                        title: category.safeName,
+                        title: category.name,
                         isSelected: selectedCategory?.id == category.id,
                         color: .blue
                     ) {
@@ -92,7 +92,7 @@ struct ExerciseFiltersView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 ForEach(muscles, id: \.id) { muscle in
                     FilterButton(
-                        title: muscle.safeName,
+                        title: muscle.name,
                         isSelected: selectedMuscles.contains(muscle),
                         color: .green
                     ) {
@@ -108,7 +108,7 @@ struct ExerciseFiltersView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 ForEach(equipment, id: \.id) { equipmentItem in
                     FilterButton(
-                        title: equipmentItem.safeName,
+                        title: equipmentItem.name,
                         isSelected: selectedEquipment?.id == equipmentItem.id,
                         color: .orange
                     ) {
@@ -148,7 +148,7 @@ struct ExerciseFiltersView: View {
         .foregroundColor(.blue)
     }
     
-    private func toggleCategory(_ category: WgerCategory) {
+    private func toggleCategory(_ category: ExerciseCategory) {
         if selectedCategory?.id == category.id {
             selectedCategory = nil
         } else {
@@ -156,7 +156,7 @@ struct ExerciseFiltersView: View {
         }
     }
     
-    private func toggleMuscle(_ muscle: WgerMuscle) {
+    private func toggleMuscle(_ muscle: Muscle) {
         if selectedMuscles.contains(muscle) {
             selectedMuscles.remove(muscle)
         } else {
@@ -164,7 +164,7 @@ struct ExerciseFiltersView: View {
         }
     }
     
-    private func toggleEquipment(_ equipmentItem: WgerEquipment) {
+    private func toggleEquipment(_ equipmentItem: OpenWorkoutEquipment) {
         if selectedEquipment?.id == equipmentItem.id {
             selectedEquipment = nil
         } else {
@@ -174,16 +174,17 @@ struct ExerciseFiltersView: View {
     
     private func loadFilterData() async {
         do {
-            async let categoriesTask = wgerService.fetchCategories()
-            async let musclesTask = wgerService.fetchMuscles()
-            async let equipmentTask = wgerService.fetchEquipment()
+            let openWorkoutService = OpenWorkoutService.shared
+            async let categoriesTask = openWorkoutService.fetchCategories()
+            async let musclesTask = openWorkoutService.fetchMuscles()
+            async let equipmentTask = openWorkoutService.fetchEquipment()
             
-            let (loadedCategories, loadedMuscles, loadedEquipment) = try await (categoriesTask, musclesTask, equipmentTask)
+            let (_, _, _) = try await (categoriesTask, musclesTask, equipmentTask)
             
             await MainActor.run {
-                self.categories = loadedCategories
-                self.muscles = loadedMuscles
-                self.equipment = loadedEquipment
+                self.categories = openWorkoutService.categories
+                self.muscles = openWorkoutService.muscles
+                self.equipment = openWorkoutService.equipment
                 self.isLoading = false
             }
         } catch {
@@ -259,9 +260,9 @@ struct FilterButton: View {
 
 #Preview {
     ExerciseFiltersView(
-        selectedCategory: .constant(nil as WgerCategory?),
-        selectedMuscles: .constant(Set<WgerMuscle>()),
-        selectedEquipment: .constant(nil as WgerEquipment?),
+        selectedCategory: .constant(nil as ExerciseCategory?),
+        selectedMuscles: .constant(Set<Muscle>()),
+        selectedEquipment: .constant(nil as OpenWorkoutEquipment?),
         onApply: {}
     )
 }

@@ -230,7 +230,7 @@ struct EnhancedNutritionSearchView: View {
         Task {
             do {
                 isLoading = true
-                if let product = try await offService.getProduct(barcode: barcode) {
+                if let product = try await offService.getUSProduct(barcode: barcode) {
                     await MainActor.run {
                         handleScannedProduct(product)
                     }

@@ -93,28 +93,28 @@ struct QuickStatsSection: View {
                 GridItem(.flexible())
             ], spacing: 16) {
                 if let analytics = analyticsService.currentAnalytics {
-                    StatCard(
+                    AnalyticsStatCard(
                         title: "Total Workouts",
                         value: "\(analytics.totalWorkouts)",
                         icon: "dumbbell",
                         color: .blue
                     )
                     
-                    StatCard(
+                    AnalyticsStatCard(
                         title: "Total Volume",
                         value: formatVolume(analytics.totalVolume),
                         icon: "scalemass",
                         color: .green
                     )
                     
-                    StatCard(
+                    AnalyticsStatCard(
                         title: "Current Streak",
                         value: "\(analytics.currentStreak) days",
                         icon: "flame",
                         color: .orange
                     )
                     
-                    StatCard(
+                    AnalyticsStatCard(
                         title: "Avg Duration",
                         value: formatDuration(analytics.averageWorkoutDuration),
                         icon: "clock",
@@ -123,7 +123,7 @@ struct QuickStatsSection: View {
                 } else {
                     // Loading placeholders
                     ForEach(0..<4, id: \.self) { _ in
-                        StatCard(
+                        AnalyticsStatCard(
                             title: "Loading...",
                             value: "---",
                             icon: "questionmark",
@@ -159,7 +159,7 @@ struct QuickStatsSection: View {
 }
 
 // MARK: - Stat Card
-struct StatCard: View {
+struct AnalyticsStatCard: View {
     let title: String
     let value: String
     let icon: String
@@ -730,19 +730,7 @@ enum AnalyticsMetric: CaseIterable {
     }
 }
 
-enum ProgressTimeframe: CaseIterable {
-    case oneWeek, oneMonth, threeMonths, sixMonths, oneYear
-    
-    var displayName: String {
-        switch self {
-        case .oneWeek: return "1 Week"
-        case .oneMonth: return "1 Month"
-        case .threeMonths: return "3 Months"
-        case .sixMonths: return "6 Months"
-        case .oneYear: return "1 Year"
-        }
-    }
-}
+// Note: ProgressTimeframe is defined in AnalyticsService.swift
 
 // MARK: - Placeholder Views
 struct GoalsListView: View {

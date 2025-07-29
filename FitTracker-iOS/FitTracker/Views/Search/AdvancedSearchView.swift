@@ -96,7 +96,7 @@ struct AdvancedSearchView: View {
     private func loadSuggestedUsers() {
         Task {
             do {
-                let users = try await firebaseManager.searchUsers(query: "", limit: 10)
+                let users = try await FirestoreService.shared.searchUsers(query: "", limit: 10)
                 await MainActor.run {
                     self.suggestedUsers = users
                 }
@@ -341,9 +341,9 @@ struct SuggestedUserRow: View {
         Task {
             do {
                 if isFollowing {
-                    try await FirebaseManager.shared.followUser(userId: user.id)
+                    try await FirestoreService.shared.followUser(userId: user.id)
                 } else {
-                    try await FirebaseManager.shared.unfollowUser(userId: user.id)
+                    try await FirestoreService.shared.unfollowUser(userId: user.id)
                 }
             } catch {
                 // Revert on error
@@ -578,7 +578,7 @@ struct WorkoutSearchResultRow: View {
 }
 
 struct SearchExercisesResultsView: View {
-    let exercises: [WgerExercise]
+    let exercises: [Exercise]
     
     var body: some View {
         LazyVStack(spacing: 12) {
@@ -590,23 +590,23 @@ struct SearchExercisesResultsView: View {
 }
 
 struct ExerciseSearchResultRow: View {
-    let exercise: WgerExercise
+    let exercise: Exercise
     
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(exercise.safeName)
+                Text(exercise.name)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                 
-                Text(exercise.safeCategory)
+                Text(exercise.category)
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                if !exercise.muscles.isEmpty {
+                if !exercise.primaryMuscles.isEmpty {
                     HStack {
-                        ForEach(exercise.muscles.prefix(3), id: \.id) { muscle in
-                            Text(muscle.safeName)
+                        ForEach(exercise.primaryMuscles.prefix(3), id: \.self) { muscle in
+                            Text(muscle)
                                 .font(.caption2)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -709,7 +709,7 @@ enum SearchType: String, CaseIterable {
 struct SearchResults {
     var users: [User] = []
     var workouts: [EnhancedWorkout] = []
-    var exercises: [WgerExercise] = []
+    var exercises: [Exercise] = []
     var posts: [SocialPost] = []
 }
 

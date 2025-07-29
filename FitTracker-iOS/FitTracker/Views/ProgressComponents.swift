@@ -381,14 +381,14 @@ struct PersonalRecordRow: View {
             Spacer()
             
             VStack(alignment: .trailing, spacing: 2) {
-                if record.weight > 0 {
-                    Text("\(Int(record.weight))kg")
+                if record.value > 0 {
+                    Text("\(Int(record.value))kg")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                 }
                 
-                Text("\(record.reps) reps")
+                Text("\(record.type.displayName)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

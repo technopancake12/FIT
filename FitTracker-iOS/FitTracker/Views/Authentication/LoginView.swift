@@ -50,7 +50,7 @@ struct LoginView: View {
                                     .foregroundColor(.white.opacity(0.9))
                                 
                                 TextField("Enter your email", text: $email)
-                                    .textFieldStyle(ModernTextFieldStyle())
+                                    .modifier(ModernTextFieldStyle())
                                     .textContentType(.emailAddress)
                                     .keyboardType(.emailAddress)
                                     .autocapitalization(.none)
@@ -63,7 +63,7 @@ struct LoginView: View {
                                     .foregroundColor(.white.opacity(0.9))
                                 
                                 SecureField("Enter your password", text: $password)
-                                    .textFieldStyle(ModernTextFieldStyle())
+                                    .modifier(ModernTextFieldStyle())
                                     .textContentType(.password)
                             }
                             
@@ -181,9 +181,9 @@ struct LoginView: View {
     }
 }
 
-struct ModernTextFieldStyle: TextFieldStyle {
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
+struct ModernTextFieldStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
             .background(

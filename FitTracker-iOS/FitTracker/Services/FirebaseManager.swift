@@ -14,6 +14,10 @@ class FirebaseManager: ObservableObject {
     let firestore = Firestore.firestore()
     let storage = Storage.storage()
     
+    var currentUserId: String? {
+        return auth.currentUser?.uid
+    }
+    
     private init() {
         auth.addStateDidChangeListener { [weak self] _, firebaseUser in
             DispatchQueue.main.async {
@@ -203,6 +207,52 @@ class FirebaseManager: ObservableObject {
             let data = try JSONSerialization.data(withJSONObject: doc.data())
             return try JSONDecoder().decode(SocialPost.self, from: data)
         }
+    }
+    
+    func likePost(postId: String) async throws {
+        guard let userId = auth.currentUser?.uid else { throw AuthError.noUser }
+        
+        let postRef = firestore.collection("socialPosts").document(postId)
+        try await firestore.runTransaction { transaction, errorPointer in
+            do {
+                let postDoc = try transaction.getDocument(postRef)
+                guard var postData = postDoc.data() else { 
+                    errorPointer?.pointee = NSError(domain: "FirebaseError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No post data found"])
+                    return nil
+                }
+                
+                var likedBy = postData["likedBy"] as? [String] ?? []
+                if likedBy.contains(userId) {
+                    likedBy.removeAll { $0 == userId }
+                    postData["likes"] = (postData["likes"] as? Int ?? 1) - 1
+                } else {
+                    likedBy.append(userId)
+                    postData["likes"] = (postData["likes"] as? Int ?? 0) + 1
+                }
+                
+                postData["likedBy"] = likedBy
+                transaction.updateData(postData, forDocument: postRef)
+                return nil
+            } catch {
+                errorPointer?.pointee = error as NSError
+                return nil
+            }
+        }
+    }
+    
+    func followUser(userId: String) async throws {
+        guard let currentUserId = auth.currentUser?.uid else { throw AuthError.noUser }
+        
+        let followData: [String: Any] = [
+            "followerId": currentUserId,
+            "followingId": userId,
+            "createdAt": Timestamp()
+        ]
+        
+        try await firestore
+            .collection("follows")
+            .document("\(currentUserId)_\(userId)")
+            .setData(followData)
     }
     
     // MARK: - Storage

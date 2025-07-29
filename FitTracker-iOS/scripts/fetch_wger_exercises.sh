@@ -1,85 +1,52 @@
 #!/usr/bin/env bash
+# Fetch up to 1000 English-language exercises from the wger API
 
-# Fetch all exercises from wger API
-# This script downloads all English-language exercises and saves them to a JSON file
+set -e
 
-set -e  # Exit on any error
-
-# Configuration
 API_BASE="https://wger.de/api/v2"
+API_KEY="c5bf06de75b1642db24c405fbbb05a0c779a0f0e"
 OUTPUT_FILE="wger_exercises.json"
-API_KEY="c5bf06de75b1642db24c405fbbb05a0c779a0f0e"  # Replace with your actual API key
+MAX_RESULTS=1000
 PAGE=1
-TEMP_FILE="temp_exercises.json"
+COUNT=0
 
-echo "🚀 Starting wger exercise fetch..."
+echo "🚀 Fetching up to $MAX_RESULTS exercises from wger..."
 
-# Clear output file
 > "$OUTPUT_FILE"
+echo "[" >> "$OUTPUT_FILE"
 
-# Create a temporary file to store all exercises
-> "$TEMP_FILE"
+while [ $COUNT -lt $MAX_RESULTS ]; do
+    echo "  ⏳ Page $PAGE..."
 
-echo "📥 Fetching exercises from wger API..."
-
-while true; do
-    echo "  Fetching page $PAGE..."
-    
-    # Make API request with authentication
     response=$(curl -s -H "Authorization: Token $API_KEY" \
                     -H "Accept: application/json" \
                     "$API_BASE/exercise/?language=2&page=$PAGE&limit=50")
-    
-    # Check if response is valid JSON
-    if ! echo "$response" | jq empty 2>/dev/null; then
-        echo "❌ Invalid JSON response on page $PAGE"
-        echo "Response: $response"
-        exit 1
-    fi
-    
-    # Extract results and append to temp file
-    result_count=$(echo "$response" | jq '.results | length')
+
+    results=$(echo "$response" | jq '.results')
+    result_count=$(echo "$results" | jq length)
+
     if [ "$result_count" -eq 0 ]; then
-        echo "  No more results on page $PAGE"
+        echo "  ✅ No more results."
         break
     fi
-    
-    echo "$response" | jq '.results[]' >> "$TEMP_FILE"
-    echo "  ✅ Added $result_count exercises from page $PAGE"
-    
-    # Check if there's a next page
-    next_url=$(echo "$response" | jq -r '.next')
-    if [ "$next_url" = "null" ] || [ -z "$next_url" ]; then
-        echo "  No more pages available"
+
+    remaining=$((MAX_RESULTS - COUNT))
+    to_take=$((result_count < remaining ? result_count : remaining))
+
+    # Take up to the remaining needed
+    echo "$results" | jq -c ".[:$to_take][]" | sed 's/$/,/' >> "$OUTPUT_FILE"
+    COUNT=$((COUNT + to_take))
+
+    if [ "$result_count" -lt 50 ]; then
         break
     fi
-    
+
     PAGE=$((PAGE + 1))
-    
-    # Rate limiting - be respectful to the API
     sleep 0.5
 done
 
-# Combine all exercises into a single JSON array
-echo "📝 Combining all exercises..."
-echo '[' > "$OUTPUT_FILE"
-cat "$TEMP_FILE" | paste -sd ',' - >> "$OUTPUT_FILE"
-echo ']' >> "$OUTPUT_FILE"
+# Remove last comma and close JSON array
+sed -i '' -e '$ s/,$//' "$OUTPUT_FILE"
+echo "]" >> "$OUTPUT_FILE"
 
-# Clean up temp file
-rm "$TEMP_FILE"
-
-# Count total exercises
-total_exercises=$(jq length "$OUTPUT_FILE")
-echo "✅ Successfully fetched $total_exercises exercises"
-echo "📁 Data saved to: $OUTPUT_FILE"
-
-# Display some sample data
-echo ""
-echo "📊 Sample exercise data:"
-jq '.[0:3] | .[] | {id, name, category: .category.name}' "$OUTPUT_FILE"
-
-echo ""
-echo "🎯 Next steps:"
-echo "1. Import to SQLite: sqlite3 exercises.db '.read import_wger.sql'"
-echo "2. Import to DuckDB: duckdb exercises.duckdb 'CREATE TABLE exercises AS SELECT * FROM read_json_auto(\"$OUTPUT_FILE\");'" 
+echo "✅ Fetched $COUNT exercises"

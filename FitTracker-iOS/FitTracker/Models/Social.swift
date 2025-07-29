@@ -96,11 +96,7 @@ struct AchievementData: Codable {
     let value: String
 }
 
-enum AchievementType: String, CaseIterable, Codable {
-    case pr = "pr"
-    case streak = "streak"
-    case milestone = "milestone"
-}
+// Note: AchievementType is defined in Analytics.swift
 
 enum PostVisibility: String, CaseIterable, Codable {
     case `public` = "public"
@@ -130,4 +126,88 @@ struct FeedItem: Identifiable {
     let user: User
     let isLiked: Bool
     let isFollowing: Bool
+}
+
+// MARK: - User Profile Model
+struct UserProfile: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let username: String
+    let displayName: String
+    let email: String
+    let avatarUrl: String?
+    let bio: String?
+    let dateOfBirth: Date?
+    let height: Double? // in cm
+    let weight: Double? // in kg
+    let fitnessLevel: FitnessLevel
+    let goals: [FitnessGoal]
+    let preferences: UserPreferences
+    let privacySettings: PrivacySettings
+    let createdAt: Date
+    let updatedAt: Date
+    
+    enum FitnessLevel: String, CaseIterable, Codable {
+        case beginner = "beginner"
+        case intermediate = "intermediate"
+        case advanced = "advanced"
+        case expert = "expert"
+    }
+    
+    enum FitnessGoal: String, CaseIterable, Codable {
+        case weightLoss = "weight_loss"
+        case muscleGain = "muscle_gain"
+        case strength = "strength"
+        case endurance = "endurance"
+        case generalFitness = "general_fitness"
+        case maintenance = "maintenance"
+    }
+    
+    struct UserPreferences: Codable {
+        let units: MeasurementUnits
+        let notifications: NotificationPreferences
+        let theme: AppTheme
+        
+        enum MeasurementUnits: String, CaseIterable, Codable {
+            case metric = "metric"
+            case imperial = "imperial"
+        }
+        
+        enum AppTheme: String, CaseIterable, Codable {
+            case light = "light"
+            case dark = "dark"
+            case system = "system"
+        }
+    }
+    
+    struct NotificationPreferences: Codable {
+        let workoutReminders: Bool
+        let progressUpdates: Bool
+        let socialInteractions: Bool
+        let achievements: Bool
+    }
+    
+    struct PrivacySettings: Codable {
+        let profileVisibility: ProfileVisibility
+        let workoutVisibility: WorkoutVisibility
+        let progressVisibility: ProgressVisibility
+        
+        enum ProfileVisibility: String, CaseIterable, Codable {
+            case `public` = "public"
+            case friends = "friends"
+            case `private` = "private"
+        }
+        
+        enum WorkoutVisibility: String, CaseIterable, Codable {
+            case `public` = "public"
+            case friends = "friends"
+            case `private` = "private"
+        }
+        
+        enum ProgressVisibility: String, CaseIterable, Codable {
+            case `public` = "public"
+            case friends = "friends"
+            case `private` = "private"
+        }
+    }
 }

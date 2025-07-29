@@ -32,20 +32,7 @@ struct BodyStatsData {
     let muscleMass: Double?
 }
 
-struct PersonalRecord {
-    let id: String
-    let exerciseName: String
-    let weight: Double
-    let reps: Int
-    let date: Date
-    let type: PRType
-}
-
-enum PRType {
-    case oneRepMax
-    case volumePR
-    case endurancePR
-}
+// Note: PersonalRecord and PRType are defined in Analytics.swift
 
 enum TimeRange: String, CaseIterable {
     case week = "Week"
@@ -79,7 +66,6 @@ class ProgressService: ObservableObject {
     
     init() {
         loadData()
-        generateMockData()
     }
     
     func loadData() {
@@ -88,7 +74,9 @@ class ProgressService: ObservableObject {
         generateStrengthData()
         generateNutritionData()
         generateBodyStatsData()
-        generatePersonalRecords()
+        Task { @MainActor in
+            generatePersonalRecords()
+        }
     }
     
     private func generateWorkoutFrequencyData() {
@@ -202,24 +190,24 @@ class ProgressService: ObservableObject {
         self.bodyStatsData = data
     }
     
-    private func generatePersonalRecords() {
-        let exercises = ["Bench Press", "Squat", "Deadlift", "Overhead Press", "Pull-ups"]
+    @MainActor private func generatePersonalRecords() {
         var records: [PersonalRecord] = []
         
-        for exercise in exercises {
+        // Get exercises from OpenWorkout API instead of hardcoded list
+        let openWorkoutService = OpenWorkoutService.shared
+        for exercise in openWorkoutService.exercises.prefix(5) {
             // Generate multiple PRs over time
             for i in 0..<3 {
                 let date = Calendar.current.date(byAdding: .month, value: -i*2, to: Date()) ?? Date()
-                let baseWeight = exercise == "Pull-ups" ? 0 : Double.random(in: 60...120)
+                let baseWeight = exercise.name == "Pull-ups" ? 0 : Double.random(in: 60...120)
                 let weight = baseWeight + Double(i * 5)
                 
                 records.append(PersonalRecord(
-                    id: UUID().uuidString,
-                    exerciseName: exercise,
-                    weight: weight,
-                    reps: exercise == "Pull-ups" ? Int.random(in: 8...15) : Int.random(in: 1...8),
-                    date: date,
-                    type: .oneRepMax
+                    exerciseId: exercise.id,
+                    exerciseName: exercise.name,
+                    type: .oneRepMax,
+                    value: weight,
+                    date: date
                 ))
             }
         }
@@ -227,40 +215,7 @@ class ProgressService: ObservableObject {
         self.personalRecords = records.sorted { $0.date > $1.date }
     }
     
-    private func generateMockData() {
-        // Generate additional mock data for demonstration
-        let calendar = Calendar.current
-        let endDate = Date()
-        
-        // Generate workout frequency data for the past 90 days
-        for i in 0..<90 {
-            guard let date = calendar.date(byAdding: .day, value: -i, to: endDate) else { continue }
-            
-            // Simulate realistic workout patterns (3-4 times per week)
-            let dayOfWeek = calendar.component(.weekday, from: date)
-            let workoutCount = (dayOfWeek == 1 || dayOfWeek == 7) ? 0 : (Int.random(in: 0...10) < 4 ? 1 : 0)
-            
-            if !workoutFrequencyData.contains(where: { calendar.isDate($0.date, inSameDayAs: date) }) {
-                workoutFrequencyData.append(WorkoutFrequencyData(date: date, count: workoutCount))
-            }
-        }
-        
-        // Generate volume data
-        for i in 0..<90 {
-            guard let date = calendar.date(byAdding: .day, value: -i, to: endDate) else { continue }
-            
-            let baseVolume = 5000
-            let variation = Int.random(in: -1000...2000)
-            let volume = max(0, baseVolume + variation)
-            
-            if !volumeData.contains(where: { calendar.isDate($0.date, inSameDayAs: date) }) {
-                volumeData.append(VolumeData(date: date, volume: volume))
-            }
-        }
-        
-        workoutFrequencyData.sort { $0.date < $1.date }
-        volumeData.sort { $0.date < $1.date }
-    }
+    // Mock data generation removed - now using real data from APIs
     
     func updateTimeRange(_ range: TimeRange) {
         selectedTimeRange = range

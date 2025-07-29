@@ -3,85 +3,71 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = 2 // Start with Home tab (center position)
     @EnvironmentObject private var firebaseManager: FirebaseManager
-    @StateObject private var localDatabase = LocalDatabaseService.shared
+    @StateObject private var openWorkoutService = OpenWorkoutService.shared
     @StateObject private var socialService = SocialService.shared
     
     var body: some View {
-        ZStack {
-            // Background gradient for entire app
-            LinearGradient(
-                colors: [
-                    Color(red: 0.05, green: 0.05, blue: 0.1),
-                    Color(red: 0.1, green: 0.1, blue: 0.2),
-                    Color(red: 0.15, green: 0.15, blue: 0.25)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+        TabView(selection: $selectedTab) {
+            // Workout Tab - First in order
+            WorkoutTabView()
+                .tabItem {
+                    Image(systemName: selectedTab == 0 ? "dumbbell.fill" : "dumbbell")
+                    Text("Workout")
+                }
+                .tag(0)
             
-            TabView(selection: $selectedTab) {
-                // Workout Tab - First in order
-                WorkoutTabView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 0 ? "dumbbell.fill" : "dumbbell")
-                        Text("Workout")
-                    }
-                    .tag(0)
-                
-                // Nutrition Tab - Second in order  
-                NutritionTabView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 1 ? "leaf.fill" : "leaf")
-                        Text("Nutrition")
-                    }
-                    .tag(1)
-                
-                // Home Tab - Center position (main dashboard)
-                HomeTabView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 2 ? "house.fill" : "house")
-                        Text("Home")
-                    }
-                    .tag(2)
-                
-                // Feed Tab - Fourth in order (social media style)
-                FeedTabView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 3 ? "heart.fill" : "heart")
-                        Text("Feed")
-                    }
-                    .tag(3)
-                
-                // Profile Tab - Last in order
-                ProfileTabView()
-                    .tabItem {
-                        Image(systemName: selectedTab == 4 ? "person.crop.circle.fill" : "person.crop.circle")
-                        Text("Profile")
-                    }
-                    .tag(4)
-            }
-            .accentColor(.white)
-            .preferredColorScheme(.dark)
-            .onAppear {
-                setupTabBarAppearance()
-            }
+            // Nutrition Tab - Second in order  
+            NutritionTabView()
+                .tabItem {
+                    Image(systemName: selectedTab == 1 ? "leaf.fill" : "leaf")
+                    Text("Nutrition")
+                }
+                .tag(1)
+            
+            // Home Tab - Center position (main dashboard)
+            HomeTabView()
+                .tabItem {
+                    Image(systemName: selectedTab == 2 ? "house.fill" : "house")
+                    Text("Home")
+                }
+                .tag(2)
+            
+            // Feed Tab - Fourth in order (social media style)
+            FeedTabView()
+                .tabItem {
+                    Image(systemName: selectedTab == 3 ? "heart.fill" : "heart")
+                    Text("Feed")
+                }
+                .tag(3)
+            
+            // Profile Tab - Last in order
+            ProfileTabView()
+                .tabItem {
+                    Image(systemName: selectedTab == 4 ? "person.crop.circle.fill" : "person.crop.circle")
+                    Text("Profile")
+                }
+                .tag(4)
+        }
+        .accentColor(Theme.Colors.accent)
+        .preferredColorScheme(.light)
+        .onAppear {
+            setupTabBarAppearance()
         }
     }
     
     private func setupTabBarAppearance() {
         let appearance = UITabBarAppearance()
-        appearance.configureWithTransparentBackground()
-        appearance.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = UIColor.systemBackground
         
         // Selected tab color
-        appearance.selectionIndicatorTintColor = .white
+        appearance.selectionIndicatorTintColor = UIColor.systemBlue
         
         // Tab item colors
-        appearance.stackedLayoutAppearance.selected.iconColor = .white
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.white]
-        appearance.stackedLayoutAppearance.normal.iconColor = UIColor.white.withAlphaComponent(0.6)
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.white.withAlphaComponent(0.6)]
+        appearance.stackedLayoutAppearance.selected.iconColor = .systemBlue
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.systemBlue]
+        appearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.systemGray]
         
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
@@ -91,54 +77,8 @@ struct ContentView: View {
 // MARK: - Tab Views
 
 struct WorkoutTabView: View {
-    @State private var selectedWorkoutTab = 0
-    
     var body: some View {
-        NavigationView {
-            ZStack {
-                backgroundGradient
-                
-                VStack(spacing: 0) {
-                    // Custom Segmented Control
-                    HStack(spacing: 0) {
-                        WorkoutTabButton(
-                            title: "Routines",
-                            isSelected: selectedWorkoutTab == 0,
-                            action: { selectedWorkoutTab = 0 }
-                        )
-                        
-                        WorkoutTabButton(
-                            title: "Exercise Search",
-                            isSelected: selectedWorkoutTab == 1,
-                            action: { selectedWorkoutTab = 1 }
-                        )
-                        
-                        WorkoutTabButton(
-                            title: "Templates",
-                            isSelected: selectedWorkoutTab == 2,
-                            action: { selectedWorkoutTab = 2 }
-                        )
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    // Tab Content
-                    TabView(selection: $selectedWorkoutTab) {
-                        WorkoutPlannerView()
-                            .tag(0)
-                        
-                        EnhancedExerciseSearchView()
-                            .tag(1)
-                        
-                        WorkoutTemplatesView()
-                            .tag(2)
-                    }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                }
-            }
-            .navigationTitle("Workouts")
-            .navigationBarTitleDisplayMode(.large)
-        }
+        HevyStyleWorkoutView()
     }
 }
 
@@ -214,7 +154,7 @@ struct FeedTabView: View {
                 
                 if isLoading {
                     ProgressView("Loading feed...")
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
@@ -237,7 +177,7 @@ struct FeedTabView: View {
                     Button(action: {}) {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 24))
-                            .foregroundColor(.white)
+                            .foregroundColor(.black)
                     }
                 }
             }
@@ -294,7 +234,7 @@ struct ProfileTabView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showEditProfile.toggle() }) {
                         Image(systemName: "gear")
-                            .foregroundColor(.white)
+                            .foregroundColor(.black)
                     }
                 }
             }
@@ -400,17 +340,17 @@ struct ProfileTabView: View {
     
     private var settingsSection: some View {
         VStack(spacing: 12) {
-            SettingsRow(icon: "chart.line.uptrend.xyaxis", title: "Analytics", color: .blue) {}
-            SettingsRow(icon: "square.and.arrow.down", title: "Export Data", color: .green) {}
-            SettingsRow(icon: "bell.fill", title: "Notifications", color: .orange) {}
-            SettingsRow(icon: "lock.fill", title: "Privacy", color: .purple) {}
-            SettingsRow(icon: "questionmark.circle.fill", title: "Help & Support", color: .cyan) {}
+            ContentSettingsRow(icon: "chart.line.uptrend.xyaxis", title: "Analytics", color: .blue) {}
+            ContentSettingsRow(icon: "square.and.arrow.down", title: "Export Data", color: .green) {}
+            ContentSettingsRow(icon: "bell.fill", title: "Notifications", color: .orange) {}
+            ContentSettingsRow(icon: "lock.fill", title: "Privacy", color: .purple) {}
+            ContentSettingsRow(icon: "questionmark.circle.fill", title: "Help & Support", color: .cyan) {}
             
             Divider()
                 .background(Color.white.opacity(0.2))
                 .padding(.vertical, 8)
             
-            SettingsRow(icon: "arrow.right.square", title: "Sign Out", color: .red) {
+            ContentSettingsRow(icon: "arrow.right.square", title: "Sign Out", color: .red) {
                 do {
                     try firebaseManager.signOut()
                 } catch {
@@ -441,15 +381,7 @@ struct ProfileTabView: View {
 // MARK: - Supporting Views
 
 private var backgroundGradient: some View {
-    LinearGradient(
-        colors: [
-            Color(red: 0.05, green: 0.05, blue: 0.1),
-            Color(red: 0.1, green: 0.1, blue: 0.2)
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-    .ignoresSafeArea()
+    Color.white.ignoresSafeArea()
 }
 
 struct WorkoutTabButton: View {
@@ -461,12 +393,12 @@ struct WorkoutTabButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(isSelected ? .white : .white.opacity(0.6))
+                .foregroundColor(isSelected ? .black : .gray)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(isSelected ? Color.blue.opacity(0.8) : Color.clear)
+                        .fill(isSelected ? Color.blue.opacity(0.2) : Color.clear)
                 )
         }
         .buttonStyle(PlainButtonStyle())
@@ -482,12 +414,12 @@ struct NutritionTabButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(isSelected ? .white : .white.opacity(0.6))
+                .foregroundColor(isSelected ? .black : .gray)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(isSelected ? Color.green.opacity(0.8) : Color.clear)
+                        .fill(isSelected ? Color.green.opacity(0.2) : Color.clear)
                 )
         }
         .buttonStyle(PlainButtonStyle())
@@ -504,8 +436,8 @@ struct SocialPostCard: View {
                 AsyncImage(url: URL(string: post.userAvatar ?? "")) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
-                    Circle().fill(Color.white.opacity(0.2))
-                        .overlay(Image(systemName: "person.fill").foregroundColor(.white.opacity(0.6)))
+                    Circle().fill(Color.gray.opacity(0.2))
+                        .overlay(Image(systemName: "person.fill").foregroundColor(.gray))
                 }
                 .frame(width: 40, height: 40)
                 .clipShape(Circle())
@@ -513,18 +445,18 @@ struct SocialPostCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(post.userName)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                     
                     Text(post.timestamp, style: .relative)
                         .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(.gray)
                 }
                 
                 Spacer()
                 
                 Button(action: {}) {
                     Image(systemName: "ellipsis")
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundColor(.gray)
                 }
             }
             
@@ -532,7 +464,7 @@ struct SocialPostCard: View {
             if !post.content.isEmpty {
                 Text(post.content)
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
                     .multilineTextAlignment(.leading)
             }
             
@@ -559,23 +491,23 @@ struct SocialPostCard: View {
                             .foregroundColor(post.isLiked ? .red : .white.opacity(0.7))
                         Text("\(post.likesCount)")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.gray)
                     }
                 }
                 
                 Button(action: {}) {
                     HStack(spacing: 4) {
                         Image(systemName: "bubble.right")
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.gray)
                         Text("\(post.commentsCount)")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.gray)
                     }
                 }
                 
                 Button(action: {}) {
                     Image(systemName: "paperplane")
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.gray)
                 }
                 
                 Spacer()
@@ -657,7 +589,7 @@ struct ActivityRow: View {
     }
 }
 
-struct SettingsRow: View {
+struct ContentSettingsRow: View {
     let icon: String
     let title: String
     let color: Color
@@ -687,7 +619,7 @@ struct SettingsRow: View {
     }
 }
 
-struct EditProfileView: View {
+struct ContentEditProfileView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -720,7 +652,7 @@ struct EditProfileView: View {
     }
 }
 
-struct WorkoutTemplatesView: View {
+struct ContentWorkoutTemplatesView: View {
     @State private var templates: [WorkoutTemplate] = []
     @State private var showCreateTemplate = false
     
@@ -785,12 +717,8 @@ struct WorkoutTemplateCard: View {
     let template: WorkoutTemplate
     
     private var durationText: String {
-        if let duration = template.estimatedDuration {
-            let minutes = Int(duration / 60)
-            return "\(minutes)min"
-        } else {
-            return "Unknown"
-        }
+        let minutes = Int(template.estimatedDuration / 60)
+        return "\(minutes)min"
     }
     
     var body: some View {
@@ -813,12 +741,10 @@ struct WorkoutTemplateCard: View {
                     )
             }
             
-            if let description = template.description {
-                Text(description)
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.8))
-                    .lineLimit(2)
-            }
+            Text(template.description)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.8))
+                .lineLimit(2)
         }
         .padding(16)
         .background(

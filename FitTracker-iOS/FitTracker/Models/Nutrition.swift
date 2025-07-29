@@ -411,6 +411,43 @@ struct MealPlanTemplate: Identifiable, Codable {
     let rating: Double
 }
 
+// MARK: - Nutrition Log Model
+struct NutritionLog: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let date: Date
+    let meals: [MealEntry]
+    let totalCalories: Double
+    let totalProtein: Double
+    let totalCarbs: Double
+    let totalFat: Double
+    let totalFiber: Double?
+    let totalSugar: Double?
+    let totalSodium: Double?
+    let notes: String?
+    let createdAt: Date
+    let updatedAt: Date
+    
+    init(id: String = UUID().uuidString, userId: String, date: Date, meals: [MealEntry] = [], notes: String? = nil) {
+        self.id = id
+        self.userId = userId
+        self.date = date
+        self.meals = meals
+        self.notes = notes
+        self.createdAt = Date()
+        self.updatedAt = Date()
+        
+        // Calculate totals from meals
+        self.totalCalories = meals.reduce(0) { $0 + $1.totalCalories }
+        self.totalProtein = meals.reduce(0) { $0 + $1.totalProtein }
+        self.totalCarbs = meals.reduce(0) { $0 + $1.totalCarbs }
+        self.totalFat = meals.reduce(0) { $0 + $1.totalFat }
+        self.totalFiber = meals.reduce(0) { $0 + ($1.foods.reduce(0) { $0 + ($1.food.fiber ?? 0) * $1.actualServingSize / 100 }) }
+        self.totalSugar = meals.reduce(0) { $0 + ($1.foods.reduce(0) { $0 + ($1.food.sugar ?? 0) * $1.actualServingSize / 100 }) }
+        self.totalSodium = meals.reduce(0) { $0 + ($1.foods.reduce(0) { $0 + ($1.food.sodium ?? 0) * $1.actualServingSize / 100 }) }
+    }
+}
+
 // MARK: - Extensions for OpenFoodFacts Integration
 extension Food {
     init(from offProduct: OFFProductDetails) {

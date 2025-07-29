@@ -124,7 +124,7 @@ struct AsyncButton<Label: View>: View {
 }
 
 // MARK: - Refresh Control with Error Handling
-struct RefreshableScrollView<Content: View>: View {
+struct ErrorRefreshableScrollView<Content: View>: View {
     let onRefresh: () async throws -> Void
     let content: () -> Content
     

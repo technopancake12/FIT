@@ -284,9 +284,12 @@ class WorkoutIntelligenceService: ObservableObject {
     
     private func calculateIntensity(_ exercise: EnhancedWorkoutExercise) -> Double {
         // Calculate intensity based on RPE or weight/reps relationship
-        if let avgRPE = exercise.sets.compactMap({ $0.rpe }).reduce(0, +) / exercise.sets.count,
-           avgRPE > 0 {
-            return Double(avgRPE) / 10.0
+        let rpeValues = exercise.sets.compactMap { $0.rpe }
+        if !rpeValues.isEmpty {
+            let avgRPE = rpeValues.reduce(0, +) / rpeValues.count
+            if avgRPE > 0 {
+                return Double(avgRPE) / 10.0
+            }
         }
         
         // Fallback: estimate intensity from reps (lower reps = higher intensity)
@@ -297,7 +300,7 @@ class WorkoutIntelligenceService: ObservableObject {
     private func generateRestReason(
         exerciseType: ExerciseType,
         intensity: Double,
-        goal: WorkoutGoal
+        goal: WorkoutContext.WorkoutGoal
     ) -> String {
         let intensityDesc = intensity > 0.8 ? "high" : "moderate"
         

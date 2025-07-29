@@ -92,7 +92,7 @@ class FirestoreService: ObservableObject {
             }
             
             // Check if username is already taken
-            let existingUser = try await db.collection(usersCollection)
+            let existingUser = try await self.db.collection(self.usersCollection)
                 .whereField("username", isEqualTo: user.username)
                 .getDocuments()
             
@@ -118,13 +118,13 @@ class FirestoreService: ObservableObject {
                 "updatedAt": FieldValue.serverTimestamp()
             ]
             
-            try await db.collection(usersCollection).document(user.id).setData(userData)
+            try await self.db.collection(self.usersCollection).document(user.id).setData(userData)
         }
     }
     
     func getUserProfile(userId: String) async throws -> User? {
         return try await executeWithRetry(context: "getUserProfile") {
-            let document = try await db.collection(usersCollection).document(userId).getDocument()
+            let document = try await self.db.collection(self.usersCollection).document(userId).getDocument()
             
             guard let data = document.data() else { return nil }
             
@@ -533,8 +533,8 @@ class FirestoreService: ObservableObject {
     }
     
     private func shouldRetryError(_ error: Error) -> Bool {
-        if let nsError = error as NSError {
-            switch nsError.domain {
+        let nsError = error as NSError
+        switch nsError.domain {
             case "FIRFirestoreErrorDomain":
                 switch nsError.code {
                 case 14: // UNAVAILABLE
@@ -585,11 +585,8 @@ class FirestoreService: ObservableObject {
         }
     }
     
-    private func removeAllListeners() {
-        listeners.forEach { $0.remove() }
-        listeners.removeAll()
-    }
-}
+    // Note: removeAllListeners() is already defined as a public method
+
 
 // MARK: - Extensions for Firestore Conversion
 extension WorkoutData {
@@ -761,7 +758,7 @@ extension AchievementData {
 
 extension Comment {
     static func fromFirestoreArray(_ dataArray: [[String: Any]]) -> [Comment] {
-        return dataArray.compactMap { data in
+        return dataArray.compactMap { data -> Comment? in
             guard let id = data["id"] as? String,
                   let userId = data["userId"] as? String,
                   let content = data["content"] as? String,
@@ -775,7 +772,7 @@ extension Comment {
                 content: content,
                 createdAt: createdAt,
                 likes: data["likes"] as? Int ?? 0,
-                likedBy: data["likedBy"] as? [String] ?? []
+                likedBy: data["likedBy"] as? [String] ?? [], replies: [Comment]?
             )
         }
     }

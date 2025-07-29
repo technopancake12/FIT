@@ -27,8 +27,8 @@ struct TemplateDetailView: View {
                     
                     // Ratings Section
                     RatingsSection(
-                        ratings: template.ratings,
-                        averageRating: template.averageRating,
+                        ratings: [],
+                        averageRating: template.rating,
                         onAddRating: { showingRatingView = true }
                     )
                     
@@ -82,13 +82,14 @@ struct TemplateDetailView: View {
     }
     
     private var isFavorited: Bool {
-        templateService.favoriteTemplates.contains { $0.id == template.id }
+        // Favorites functionality not yet implemented
+        false
     }
     
     private func useTemplate() {
         Task {
             do {
-                let workout = try await templateService.useTemplate(template)
+                let workout = try await templateService.useTemplate(template.id)
                 presentationMode.wrappedValue.dismiss()
                 
                 NotificationCenter.default.post(
@@ -105,9 +106,11 @@ struct TemplateDetailView: View {
         Task {
             do {
                 if isFavorited {
-                    try await templateService.removeFromFavorites(template.id)
+                    // Favorites functionality not yet implemented
+                    print("Remove from favorites: \(template.id)")
                 } else {
-                    try await templateService.addToFavorites(template.id)
+                    // Favorites functionality not yet implemented
+                    print("Add to favorites: \(template.id)")
                 }
             } catch {
                 print("Error toggling favorite: \(error)")
@@ -123,11 +126,11 @@ struct TemplateHeaderView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                CategoryBadge(category: template.category)
+                CategoryBadge(category: "General")
                 DifficultyBadge(difficulty: template.difficulty)
                 Spacer()
                 
-                if template.isPublic {
+                if template.visibility == .public {
                     Text("Public")
                         .font(.caption)
                         .fontWeight(.medium)
@@ -186,28 +189,28 @@ struct StatsSection: View {
                 .fontWeight(.semibold)
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                StatCard(
+                TemplateStatCard(
                     icon: "dumbbell",
                     title: "Exercises",
                     value: "\(template.totalExercises)",
                     color: .blue
                 )
                 
-                StatCard(
+                TemplateStatCard(
                     icon: "list.number",
                     title: "Total Sets",
                     value: "\(template.totalSets)",
                     color: .green
                 )
                 
-                StatCard(
+                TemplateStatCard(
                     icon: "clock",
                     title: "Duration",
-                    value: template.estimatedDuration?.formattedDuration ?? "N/A",
+                    value: template.estimatedDuration.formattedDuration ?? "N/A",
                     color: .orange
                 )
                 
-                StatCard(
+                TemplateStatCard(
                     icon: "person.3",
                     title: "Uses",
                     value: "\(template.usageCount)",
@@ -221,14 +224,14 @@ struct StatsSection: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                     
-                    TagsScrollView(tags: template.targetMuscleGroups)
+                    TagsScrollView(tags: template.targetMuscleGroups.map { $0.displayName })
                 }
             }
         }
     }
 }
 
-struct StatCard: View {
+struct TemplateStatCard: View {
     let icon: String
     let title: String
     let value: String
@@ -284,7 +287,7 @@ struct TemplateExerciseCard: View {
                         .font(.subheadline)
                         .fontWeight(.semibold)
                     
-                    Text("\(exercise.sets.count) sets")
+                    Text("\(exercise.targetSets) sets")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -342,18 +345,11 @@ struct TemplateSetRow: View {
                 .foregroundColor(.secondary)
                 .frame(width: 50, alignment: .leading)
             
-            if let reps = set.targetReps {
-                Text("\(reps) reps")
-                    .font(.caption)
-            }
+            Text("\(exercise.targetReps)")
+                .font(.caption)
             
-            if let weight = set.targetWeight {
-                Text("\(weight, specifier: "%.1f") lbs")
-                    .font(.caption)
-            }
-            
-            if let rpe = set.targetRPE {
-                Text("RPE \(rpe)")
+            if let weight = exercise.targetWeight {
+                Text("\(weight)")
                     .font(.caption)
             }
             
@@ -427,8 +423,8 @@ struct RatingCard: View {
                     .foregroundColor(.secondary)
             }
             
-            if let comment = rating.comment {
-                Text(comment)
+            if let review = rating.review {
+                Text(review)
                     .font(.body)
             }
         }
@@ -565,7 +561,7 @@ struct RateTemplateView: View {
                 try await templateService.rateTemplate(
                     template.id,
                     rating: selectedRating,
-                    comment: comment.isEmpty ? nil : comment
+                    review: comment.isEmpty ? nil : comment
                 )
                 
                 await MainActor.run {

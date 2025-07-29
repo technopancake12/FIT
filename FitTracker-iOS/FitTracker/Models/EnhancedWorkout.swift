@@ -135,36 +135,13 @@ struct EnhancedWorkoutSet: Identifiable, Codable {
 }
 
 // MARK: - Workout Template
-struct WorkoutTemplate: Identifiable, Codable {
-    let id: String
-    let name: String
-    let description: String?
-    let exercises: [TemplateExercise]
-    let tags: [String]
-    let isPublic: Bool
-    let createdBy: String
-    let createdAt: Date
-    let difficulty: WorkoutDifficulty
-    let estimatedDuration: TimeInterval?
-    
-    enum WorkoutDifficulty: String, CaseIterable, Codable {
-        case beginner = "Beginner"
-        case intermediate = "Intermediate"
-        case advanced = "Advanced"
-        case expert = "Expert"
-    }
-}
-
-struct TemplateExercise: Identifiable, Codable {
-    let id: String
-    let exerciseId: String
-    let name: String
-    let sets: Int
-    let reps: String // Could be "8-12" or "AMRAP"
-    let weight: String? // Could be "%1RM" or specific weight
-    let restTime: TimeInterval?
-    let notes: String?
-    let order: Int
+// Note: WorkoutTemplate and TemplateExercise are defined in WorkoutTemplate.swift
+// This file contains the WorkoutDifficulty enum for compatibility
+enum WorkoutDifficulty: String, CaseIterable, Codable {
+    case beginner = "Beginner"
+    case intermediate = "Intermediate"
+    case advanced = "Advanced"
+    case expert = "Expert"
 }
 
 // MARK: - Progress Tracking

@@ -22,7 +22,7 @@ struct PostCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Post Header
-            PostHeaderView(
+                            SocialPostHeaderView(
                 user: feedItem.user,
                 post: feedItem.post,
                 isFollowing: isFollowing,
@@ -37,7 +37,7 @@ struct PostCard: View {
             PostContentView(post: feedItem.post)
             
             // Post Actions
-            PostActionsView(
+                            SocialPostActionsView(
                 likesCount: likesCount,
                 commentsCount: feedItem.post.comments.count,
                 isLiked: isLiked,
@@ -76,7 +76,7 @@ struct PostCard: View {
 }
 
 // MARK: - Post Header View
-struct PostHeaderView: View {
+struct SocialPostHeaderView: View {
     let user: User
     let post: SocialPost
     let isFollowing: Bool
@@ -306,7 +306,7 @@ struct AchievementDataCard: View {
 }
 
 // MARK: - Post Actions View
-struct PostActionsView: View {
+struct SocialPostActionsView: View {
     let likesCount: Int
     let commentsCount: Int
     let isLiked: Bool
@@ -511,7 +511,7 @@ struct CommentView: View {
 }
 
 // MARK: - Create Post View
-struct CreatePostView: View {
+struct SocialCreatePostView: View {
     let socialService: SocialService
     @Binding var isPresented: Bool
     

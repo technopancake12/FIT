@@ -2,9 +2,9 @@ import SwiftUI
 import AVFoundation
 
 struct BarcodeScannerView: View {
-    @StateObject private var localDatabase = LocalDatabaseService.shared
+    @StateObject private var offService = OpenFoodFactsService.shared
     @State private var scannedCode: String = ""
-    @State private var scannedFood: DatabaseFood?
+    @State private var scannedFood: Food?
     @State private var isScanning = false
     @State private var showManualEntry = false
     @State private var manualBarcode = ""
@@ -261,9 +261,10 @@ struct BarcodeScannerView: View {
         
         Task {
             do {
-                if let food = try await localDatabase.getFoodByBarcode(manualBarcode) {
-                    scannedFood = food
-                } else {
+                        if let product = try await offService.getUSProduct(barcode: manualBarcode),
+           let productDetails = product.product {
+            scannedFood = productDetails.toFood()
+        } else {
                     scannerError = "Product not found in US database"
                 }
             } catch {

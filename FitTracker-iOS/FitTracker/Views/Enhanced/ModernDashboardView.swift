@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ModernDashboardView: View {
     @StateObject private var firebaseManager = FirebaseManager.shared
-    @StateObject private var wgerService = WgerAPIService.shared
+    @StateObject private var openWorkoutService = OpenWorkoutService.shared
     @State private var dailyNutrition: DailyNutrition = DailyNutrition()
     @State private var recentWorkouts: [EnhancedWorkout] = []
     @State private var todayProgress: DashboardProgress = DashboardProgress()

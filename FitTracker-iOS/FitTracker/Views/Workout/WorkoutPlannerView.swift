@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct WorkoutPlannerView: View {
-    @StateObject private var localDatabase = LocalDatabaseService.shared
-    @StateObject private var wgerService = WgerAPIService.shared
+    @StateObject private var openWorkoutService = OpenWorkoutService.shared
     @State private var selectedExercises: [Exercise] = []
     @State private var workoutName = ""
     @State private var workoutNotes = ""
@@ -324,7 +323,7 @@ struct WorkoutPlannerView: View {
         }
     }
     
-    private func convertDifficulty(_ difficulty: ExerciseDifficulty) -> WorkoutTemplate.WorkoutDifficulty {
+    private func convertDifficulty(_ difficulty: ExerciseDifficulty) -> WorkoutDifficulty {
         switch difficulty {
         case .beginner:
             return .beginner
@@ -512,9 +511,9 @@ struct SetBuilderRow: View {
 struct ExerciseSelectionView: View {
     @Binding var selectedExercises: [Exercise]
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var localDatabase = LocalDatabaseService.shared
+    @StateObject private var openWorkoutService = OpenWorkoutService.shared
     @State private var searchText = ""
-    @State private var exercises: [DatabaseExercise] = []
+    @State private var exercises: [Exercise] = []
     @State private var isLoading = false
     
     var body: some View {
@@ -545,9 +544,9 @@ struct ExerciseSelectionView: View {
                     List {
                         ForEach(exercises, id: \.id) { exercise in
                             ExerciseSelectionRow(
-                                exercise: exercise.toLocalExercise(),
-                                isSelected: selectedExercises.contains { $0.id == exercise.id.description },
-                                onToggle: { toggleExercise(exercise.toLocalExercise()) }
+                                exercise: exercise,
+                                isSelected: selectedExercises.contains { $0.id == exercise.id },
+                                onToggle: { toggleExercise(exercise) }
                             )
                             .listRowBackground(Color.clear)
                         }
@@ -582,7 +581,8 @@ struct ExerciseSelectionView: View {
     private func loadExercises() async {
         isLoading = true
         do {
-            exercises = try await localDatabase.searchExercises(query: "", limit: 100)
+            try await openWorkoutService.fetchExercises()
+            exercises = openWorkoutService.exercises
         } catch {
             print("Error loading exercises: \(error)")
         }
@@ -593,7 +593,7 @@ struct ExerciseSelectionView: View {
         Task {
             do {
                 isLoading = true
-                exercises = try await localDatabase.searchExercises(query: searchText, limit: 100)
+                exercises = try await openWorkoutService.searchExercises(query: searchText)
                 isLoading = false
             } catch {
                 print("Error searching exercises: \(error)")

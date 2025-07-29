@@ -241,7 +241,7 @@ struct NutritionFactsCard: View {
             
             VStack(spacing: 12) {
                 if let calories = nutriments.energyKcal100g {
-                    NutritionRow(
+                    FoodNutritionRow(
                         label: "Calories",
                         value: "\(Int(calories * multiplier))",
                         unit: "kcal",
@@ -250,7 +250,7 @@ struct NutritionFactsCard: View {
                 }
                 
                 if let fat = nutriments.fat100g {
-                    NutritionRow(
+                    FoodNutritionRow(
                         label: "Total Fat",
                         value: String(format: "%.1f", fat * multiplier),
                         unit: "g"
@@ -267,7 +267,7 @@ struct NutritionFactsCard: View {
                 }
                 
                 if let carbs = nutriments.carbohydrates100g {
-                    NutritionRow(
+                    FoodNutritionRow(
                         label: "Total Carbohydrates",
                         value: String(format: "%.1f", carbs * multiplier),
                         unit: "g"
@@ -293,7 +293,7 @@ struct NutritionFactsCard: View {
                 }
                 
                 if let protein = nutriments.proteins100g {
-                    NutritionRow(
+                    FoodNutritionRow(
                         label: "Protein",
                         value: String(format: "%.1f", protein * multiplier),
                         unit: "g"
@@ -301,7 +301,7 @@ struct NutritionFactsCard: View {
                 }
                 
                 if let sodium = nutriments.sodium100g {
-                    NutritionRow(
+                    FoodNutritionRow(
                         label: "Sodium",
                         value: String(format: "%.0f", sodium * multiplier * 1000),
                         unit: "mg"
@@ -321,7 +321,7 @@ struct NutritionFactsCard: View {
     }
 }
 
-struct NutritionRow: View {
+struct FoodNutritionRow: View {
     let label: String
     let value: String
     let unit: String
@@ -427,7 +427,8 @@ struct IngredientsCard: View {
             nutriscoreGrade: "B",
             novaGroup: 2,
             servingSize: "30g",
-            packagingTags: []
+            packagingTags: [],
+            countriesTags: ["en:united-states"]
         )
     ) { food in
         print("Added food: \(food.name)")

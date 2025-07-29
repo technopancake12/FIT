@@ -194,25 +194,27 @@ class DataImportService: ObservableObject {
     
     private func importNutritionLogs(_ logs: [NutritionLog]) async throws {
         for log in logs {
-            try await firebaseManager.saveNutritionLog(log)
+            for meal in log.meals {
+                try await firebaseManager.saveNutritionEntry(meal)
+            }
         }
     }
     
     private func importGoals(_ goals: [FitnessGoal]) async throws {
         for goal in goals {
-            try await analyticsService.saveGoal(goal)
+            try await analyticsService.createGoal(goal)
         }
     }
     
     private func importAchievements(_ achievements: [Achievement]) async throws {
         for achievement in achievements {
-            try await analyticsService.saveAchievement(achievement)
+            try await saveAchievementToFirestore(achievement)
         }
     }
     
     private func importTemplates(_ templates: [WorkoutTemplate]) async throws {
         for template in templates {
-            try await firebaseManager.saveWorkoutTemplate(template)
+            try await saveWorkoutTemplateToFirestore(template)
         }
     }
     
@@ -242,27 +244,25 @@ class DataImportService: ObservableObject {
             
             // Create simplified workout (would need more complex parsing for full exercise data)
             let exercises = exerciseNames.map { name in
-                Exercise(
+                WorkoutExercise(
                     id: UUID().uuidString,
-                    name: name,
-                    sets: [ExerciseSet(id: UUID().uuidString, reps: 10, weight: 0, rpe: nil)],
-                    muscleGroups: [],
-                    instructions: "",
-                    notes: nil
+                    exerciseId: UUID().uuidString,
+                    sets: [WorkoutSet(id: UUID().uuidString, reps: 10, weight: 0, restTime: nil, completed: true, rpe: nil)],
+                    notes: nil,
+                    targetSets: 1,
+                    targetReps: 10,
+                    targetWeight: 0
                 )
             }
             
             let workout = Workout(
                 id: UUID().uuidString,
-                userId: firebaseManager.currentUserId ?? "",
                 name: name,
                 date: date,
-                duration: duration,
                 exercises: exercises,
-                notes: notes.isEmpty ? nil : notes,
-                isCompleted: true,
-                createdAt: date,
-                updatedAt: date
+                duration: duration,
+                completed: true,
+                notes: notes.isEmpty ? nil : notes
             )
             
             workouts.append(workout)
@@ -302,41 +302,51 @@ class DataImportService: ObservableObject {
                 calories: calories,
                 protein: protein,
                 carbs: carbs,
-                fat: fat,
-                quantity: 1.0,
-                unit: "serving"
+                fat: fat
             )
             
             let dateKey = dateFormatter.string(from: date)
             
-            if var existingLog = nutritionLogs[dateKey] {
+            if let existingLog = nutritionLogs[dateKey] {
                 // Find or create meal
-                if let mealIndex = existingLog.meals.firstIndex(where: { $0.type == mealType }) {
-                    existingLog.meals[mealIndex].foods.append(food)
+                var updatedMeals = existingLog.meals
+                if let mealIndex = updatedMeals.firstIndex(where: { $0.mealType.rawValue == mealType }) {
+                    var updatedMeal = updatedMeals[mealIndex]
+                    updatedMeal.foods.append(FoodEntry(food: food, servingSize: 100))
+                    updatedMeals[mealIndex] = updatedMeal
                 } else {
-                    let newMeal = Meal(
+                    let newMeal = MealEntry(
                         id: UUID().uuidString,
-                        type: mealType,
-                        foods: [food],
-                        targetCalories: nil
+                        date: date,
+                        mealType: MealEntry.MealType(rawValue: mealType) ?? .snack,
+                        foods: [FoodEntry(food: food, servingSize: 100)],
+                        notes: nil
                     )
-                    existingLog.meals.append(newMeal)
+                    updatedMeals.append(newMeal)
                 }
-                nutritionLogs[dateKey] = existingLog
+                
+                // Create new nutrition log with updated meals
+                let updatedLog = NutritionLog(
+                    id: existingLog.id,
+                    userId: existingLog.userId,
+                    date: date,
+                    meals: updatedMeals,
+                    notes: existingLog.notes
+                )
+                nutritionLogs[dateKey] = updatedLog
             } else {
-                let meal = Meal(
+                let meal = MealEntry(
                     id: UUID().uuidString,
-                    type: mealType,
-                    foods: [food],
-                    targetCalories: nil
+                    date: date,
+                    mealType: MealEntry.MealType(rawValue: mealType) ?? .snack,
+                    foods: [FoodEntry(food: food, servingSize: 100)],
+                    notes: nil
                 )
                 
                 let log = NutritionLog(
-                    id: UUID().uuidString,
                     userId: firebaseManager.currentUserId ?? "",
                     date: date,
                     meals: [meal],
-                    waterIntake: 0,
                     notes: nil
                 )
                 
@@ -368,6 +378,27 @@ class DataImportService: ObservableObject {
         }
         
         return components
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func saveAchievementToFirestore(_ achievement: Achievement) async throws {
+        guard let userId = firebaseManager.currentUserId else { throw AuthError.noUser }
+        
+        var achievementWithUser = achievement
+        achievementWithUser.userId = userId
+        
+        try await firebaseManager.firestore
+            .collection("user_achievements")
+            .document(achievement.id)
+            .setData(achievementWithUser.toDictionary())
+    }
+    
+    private func saveWorkoutTemplateToFirestore(_ template: WorkoutTemplate) async throws {
+        try await firebaseManager.firestore
+            .collection("workout_templates")
+            .document(template.id)
+            .setData(template.toFirestore())
     }
     
     // MARK: - Utilities
@@ -406,7 +437,7 @@ class DataImportService: ObservableObject {
 
 // MARK: - Supporting Types
 
-struct ImportSummary {
+struct ImportSummary: Equatable {
     let workoutsImported: Int
     let nutritionLogsImported: Int
     let goalsImported: Int
@@ -455,7 +486,7 @@ enum ImportError: LocalizedError {
 // MARK: - Extensions
 
 extension FirebaseManager {
-    func saveWorkout(_ workout: Workout) async throws {
+    func saveWorkoutFromImport(_ workout: Workout) async throws {
         // Implementation would save workout to Firebase
     }
     
@@ -463,22 +494,23 @@ extension FirebaseManager {
         // Implementation would save nutrition log to Firebase
     }
     
-    func saveWorkoutTemplate(_ template: WorkoutTemplate) async throws {
+    func saveWorkoutTemplateFromImport(_ template: WorkoutTemplate) async throws {
         // Implementation would save workout template to Firebase
     }
     
-    func updateUserProfile(_ profile: UserProfile) async throws {
+    func updateUserProfile(_ profile: User) async throws {
         // Implementation would update user profile in Firebase
+        try await updateUserProfile(displayName: profile.displayName, photoURL: nil)
     }
 }
 
 extension AnalyticsService {
-    func saveGoal(_ goal: FitnessGoal) async throws {
+    func saveGoalFromImport(_ goal: FitnessGoal) async throws {
         // Implementation would save goal
         goals.append(goal)
     }
     
-    func saveAchievement(_ achievement: Achievement) async throws {
+    func saveAchievementFromImport(_ achievement: Achievement) async throws {
         // Implementation would save achievement
         achievements.append(achievement)
     }

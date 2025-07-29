@@ -7,7 +7,7 @@ class SearchService: ObservableObject {
     
     private let db = Firestore.firestore()
     private let firebaseManager = FirebaseManager.shared
-    private let wgerService = WgerAPIService.shared
+    private let openWorkoutService = OpenWorkoutService.shared
     
     private init() {}
     
@@ -186,27 +186,27 @@ class SearchService: ObservableObject {
     }
     
     // MARK: - Exercise Search
-    private func searchExercises(query: String, filters: SearchFilters) async throws -> [WgerExercise] {
-        // Use WGER API for exercise search
-        let exercises = try await wgerService.searchExercises(query: query)
+    private func searchExercises(query: String, filters: SearchFilters) async throws -> [Exercise] {
+        // Use OpenWorkout API for exercise search
+        let exercises = try await openWorkoutService.searchExercises(query: query)
         
         var filteredExercises = exercises
         
         // Apply filters
         if let muscleGroup = filters.muscleGroup {
             filteredExercises = filteredExercises.filter { exercise in
-                exercise.muscles.contains { muscle in
-                    muscle.safeName.lowercased().contains(muscleGroup.lowercased())
+                exercise.primaryMuscles.contains { muscle in
+                    muscle.lowercased().contains(muscleGroup.lowercased())
+                } || exercise.secondaryMuscles.contains { muscle in
+                    muscle.lowercased().contains(muscleGroup.lowercased())
                 }
             }
         }
         
         if !filters.equipment.isEmpty {
             filteredExercises = filteredExercises.filter { exercise in
-                exercise.equipment.contains { equipment in
-                    filters.equipment.contains { filter in
-                        equipment.safeName.lowercased().contains(filter.lowercased())
-                    }
+                filters.equipment.contains { filter in
+                    exercise.equipment.lowercased().contains(filter.lowercased())
                 }
             }
         }
@@ -426,26 +426,9 @@ struct SearchHistoryItem {
     let timestamp: Date
 }
 
-// MARK: - WGER API Extension
-extension WgerAPIService {
-    func searchExercises(query: String) async throws -> [WgerExercise] {
-        var exercises: [WgerExercise] = []
-        
-        do {
-            // Search exercises by name (mock implementation)
-            // In reality, this would make an API call to WGER
-            exercises = try await getExercises(page: 1, limit: 50)
-            
-            // Filter exercises that match the query
-            exercises = exercises.filter { exercise in
-                exercise.safeName.lowercased().contains(query.lowercased()) ||
-                exercise.safeDescription.lowercased().contains(query.lowercased())
-            }
-        } catch {
-            print("Error searching WGER exercises: \(error)")
-            // Return empty array on error
-        }
-        
-        return exercises
+// MARK: - OpenWorkout API Extension
+extension OpenWorkoutService {
+    func searchExercisesByQuery(query: String) async throws -> [Exercise] {
+        return try await searchExercises(query: query)
     }
 }

@@ -50,7 +50,7 @@ struct OnboardingView: View {
             }
         }
         .sheet(isPresented: $showingSignUp) {
-            SignUpView(userProfile: userProfile) {
+                            OnboardingSignUpView(userProfile: userProfile) {
                 completeOnboarding()
             }
         }
@@ -842,7 +842,7 @@ struct OnboardingPage {
 }
 
 // MARK: - Sign Up View Placeholder
-struct SignUpView: View {
+struct OnboardingSignUpView: View {
     let userProfile: OnboardingUserProfile
     let onComplete: () -> Void
     @Environment(\.presentationMode) var presentationMode

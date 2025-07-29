@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct EnhancedExerciseSearchView: View {
-    @StateObject private var wgerService = WgerAPIService.shared
+    @StateObject private var openWorkoutService = OpenWorkoutService.shared
     @State private var searchText = ""
-    @State private var selectedCategory: WgerCategory?
-    @State private var selectedMuscles: Set<WgerMuscle> = []
-    @State private var selectedEquipment: WgerEquipment?
-    @State private var exercises: [WgerExercise] = []
+    @State private var selectedCategory: ExerciseCategory?
+    @State private var selectedMuscles: Set<String> = []
+    @State private var selectedEquipment: Equipment?
+    @State private var exercises: [Exercise] = []
     @State private var isLoading = false
     @State private var showFilters = false
     
@@ -200,7 +200,8 @@ struct EnhancedExerciseSearchView: View {
     private func loadInitialData() async {
         do {
             isLoading = true
-            exercises = try await wgerService.fetchExercises()
+            try await openWorkoutService.fetchExercises()
+            exercises = openWorkoutService.exercises
             isLoading = false
         } catch {
             print("Error loading exercises: \(error)")
@@ -212,12 +213,7 @@ struct EnhancedExerciseSearchView: View {
         Task {
             do {
                 isLoading = true
-                exercises = try await wgerService.fetchExercises(
-                    searchTerm: searchText.isEmpty ? nil : searchText,
-                    category: selectedCategory?.id,
-                    muscles: Array(selectedMuscles.map { $0.id }),
-                    equipment: selectedEquipment?.id
-                )
+                exercises = try await openWorkoutService.searchExercises(query: searchText)
                 isLoading = false
             } catch {
                 print("Error searching exercises: \(error)")
@@ -228,8 +224,8 @@ struct EnhancedExerciseSearchView: View {
 }
 
 struct ExerciseCard: View {
-    let exercise: WgerExercise
-    @State private var exerciseImages: [WgerExerciseImage] = []
+    let exercise: Exercise
+    @State private var exerciseImages: [String] = []
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -254,12 +250,12 @@ struct ExerciseCard: View {
     
     private var exerciseInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(exercise.safeName)
+            Text(exercise.name)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.white)
                 .lineLimit(2)
             
-            Text(exercise.category?.safeName ?? "Unknown Category")
+            Text(exercise.category)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.blue)
         }
@@ -268,7 +264,7 @@ struct ExerciseCard: View {
     @ViewBuilder
     private var exerciseImage: some View {
         if let firstImage = exerciseImages.first {
-            AsyncImage(url: URL(string: firstImage.image)) { image in
+            AsyncImage(url: URL(string: firstImage)) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -292,7 +288,7 @@ struct ExerciseCard: View {
     
     @ViewBuilder
     private var musclesSection: some View {
-        if !exercise.muscles.isEmpty {
+        if !exercise.primaryMuscles.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Primary Muscles")
                     .font(.system(size: 12, weight: .semibold))
@@ -306,7 +302,7 @@ struct ExerciseCard: View {
     private var musclesList: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(exercise.muscles, id: \.id) { muscle in
+                ForEach(exercise.primaryMuscles, id: \.self) { muscle in
                     muscleTag(muscle)
                 }
             }
@@ -314,8 +310,8 @@ struct ExerciseCard: View {
         }
     }
     
-    private func muscleTag(_ muscle: WgerMuscle) -> some View {
-        Text(muscle.safeName)
+    private func muscleTag(_ muscle: String) -> some View {
+        Text(muscle)
             .font(.system(size: 11, weight: .medium))
             .foregroundColor(.white)
             .padding(.horizontal, 8)
@@ -328,7 +324,7 @@ struct ExerciseCard: View {
     
     @ViewBuilder
     private var equipmentSection: some View {
-        if !exercise.equipment.isEmpty {
+        if exercise.equipment != "None" && !exercise.equipment.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Equipment")
                     .font(.system(size: 12, weight: .semibold))
@@ -342,16 +338,14 @@ struct ExerciseCard: View {
     private var equipmentList: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(exercise.equipment, id: \.id) { equipment in
-                    equipmentTag(equipment)
-                }
+                equipmentTag(exercise.equipment)
             }
             .padding(.horizontal, 1)
         }
     }
     
-    private func equipmentTag(_ equipment: WgerEquipment) -> some View {
-        Text(equipment.safeName)
+    private func equipmentTag(_ equipment: String) -> some View {
+        Text(equipment)
             .font(.system(size: 11, weight: .medium))
             .foregroundColor(.white)
             .padding(.horizontal, 8)
@@ -372,11 +366,9 @@ struct ExerciseCard: View {
     }
     
     private func loadExerciseImages() async {
-        do {
-            exerciseImages = try await WgerAPIService.shared.fetchExerciseImages(for: exercise.exerciseBase ?? 0)
-        } catch {
-            print("Error loading exercise images: \(error)")
-        }
+        // OpenWorkout API doesn't provide exercise images yet
+        // This will be implemented when the API supports it
+        exerciseImages = []
     }
 }
 

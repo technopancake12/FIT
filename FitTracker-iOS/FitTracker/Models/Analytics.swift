@@ -110,6 +110,24 @@ struct UserAnalytics: Identifiable, Codable {
     }
 }
 
+// MARK: - Workout Analytics
+struct WorkoutAnalytics: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let timeframe: String
+    let entries: [WorkoutAnalyticsEntry]
+    let summary: WorkoutAnalyticsSummary
+    
+    struct WorkoutAnalyticsSummary: Codable {
+        let totalWorkouts: Int
+        let totalVolume: Double
+        let averageWorkoutDuration: TimeInterval
+        let mostFrequentExercise: String?
+        let strongestMuscleGroup: String?
+        let consistencyScore: Double
+    }
+}
+
 // MARK: - Workout Analytics Entry
 struct WorkoutAnalyticsEntry: Identifiable, Codable {
     let id: String
@@ -547,7 +565,7 @@ struct FitnessGoal: Identifiable, Codable {
             "targetDate": Timestamp(date: targetDate),
             "createdAt": Timestamp(date: createdAt),
             "isCompleted": isCompleted,
-            "completedAt": completedAt != nil ? Timestamp(date: completedAt!) : nil as Any
+            "completedAt": completedAt != nil ? Timestamp(date: completedAt!) : NSNull()
         ]
     }
     
